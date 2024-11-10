@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 LUCI_TITLE:=清水河电信认证
 LUCI_PKGARCH:=all
 PKG_NAME:=luci-app-uestc_ct_authclient
-PKG_VERSION:=1.0
+PKG_VERSION:=1.2
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -18,11 +18,10 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-    LUCI 界面，用于清水河电信认证客户端的配置和管理。
+    LuCI App to manage uestc_ct_authclient and network monitoring.
 endef
 
 define Build/Compile
-	# 确保下面是一个制表符开头
 	@echo "Nothing to compile"
 endef
 

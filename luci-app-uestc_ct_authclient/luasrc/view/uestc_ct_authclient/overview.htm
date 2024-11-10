@@ -21,13 +21,21 @@ end
 -- 检查服务是否正在运行
 local is_running = (sys.call("pgrep -f '" .. PROG .. "' >/dev/null") == 0)
 
-local status
+-- 检查网络状态
+local network_status = "未运行"
 if is_running then
-    local heartbeat_host = uci:get("uestc_ct_authclient", "authclient", "heartbeat_host") or "223.5.5.5"
-    status = sys.exec("ping -c 1 -W 1 " .. heartbeat_host .. " >/dev/null 2>&1 && echo '已连接' || echo '未连接'")
-    status = status and status:gsub("\n", "") or "未知"
+    -- 获取心跳检测地址列表
+    local heartbeat_hosts = uci:get_list("uestc_ct_authclient", "authclient", "heartbeat_hosts") or {"223.5.5.5", "8.8.8.8"}
+    -- 检查网络连通性
+    network_status = "未连接"
+    for _, host in ipairs(heartbeat_hosts) do
+        if sys.call("ping -c 1 -W 1 " .. host .. " >/dev/null 2>&1") == 0 then
+            network_status = "已连接"
+            break
+        end
+    end
 else
-    status = "未运行"
+    network_status = "未运行"
 end
 
 local last_login = fs.readfile("/tmp/uestc_ct_authclient_last_login") or "无"
@@ -51,12 +59,12 @@ local last_login = fs.readfile("/tmp/uestc_ct_authclient_last_login") or "无"
         <tr class="cbi-section-table-row">
             <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:网络状态%></strong></td>
             <td class="cbi-section-table-cell" style="text-align: left;">
-                <% if status == "已连接" then %>
-                    <span style="color: green;"><strong><%=status%></strong></span>
-                <% elseif status == "未连接" then %>
-                    <span style="color: red;"><strong><%=status%></strong></span>
+                <% if network_status == "已连接" then %>
+                    <span style="color: green;"><strong><%=network_status%></strong></span>
+                <% elseif network_status == "未连接" then %>
+                    <span style="color: red;"><strong><%=network_status%></strong></span>
                 <% else %>
-                    <span><strong><%=status%></strong></span>
+                    <span><strong><%=network_status%></strong></span>
                 <% end %>
             </td>
         </tr>
@@ -130,4 +138,3 @@ local last_login = fs.readfile("/tmp/uestc_ct_authclient_last_login") or "无"
 </script>
 
 <%+footer%>
-

@@ -35,16 +35,18 @@ if [ -z "$INTERFACE_IP" ]; then
     exit 1
 fi
 
-# 执行登录程序
+# 执行登录程序，并捕获输出
 echo "$(date): 执行登录程序..." >> $LOG_FILE
-/usr/bin/uestc_ct_authclient >> $LOG_FILE 2>&1
+LOGIN_OUTPUT=$(/usr/bin/uestc_ct_authclient 2>&1)
+
+# 将登录输出写入日志
+echo "$LOGIN_OUTPUT" >> $LOG_FILE
 
 # 检查登录是否成功
-if grep -q "\[INFO\] 使用账号" $LOG_FILE; then
+if echo "$LOGIN_OUTPUT" | grep -q "\[INFO\] 使用账号"; then
     # 登录成功，记录登录时间
     date > /tmp/uestc_ct_authclient_last_login
     echo "$(date): 登录成功，更新上次登录时间。" >> $LOG_FILE
 else
     echo "$(date): 登录失败，未更新上次登录时间。" >> $LOG_FILE
 fi
-

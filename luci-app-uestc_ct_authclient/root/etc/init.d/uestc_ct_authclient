@@ -17,6 +17,9 @@ boot() {
 }
 
 start_service() {
+
+    sleep 2
+
     username=$(uci get uestc_ct_authclient.@authclient[0].username 2>/dev/null)
     password=$(uci get uestc_ct_authclient.@authclient[0].password 2>/dev/null)
 

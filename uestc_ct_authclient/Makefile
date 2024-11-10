@@ -10,33 +10,33 @@ PKG_INSTALL:=1
 include $(INCLUDE_DIR)/package.mk
 
 define Package/uestc_ct_authclient
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=清水河电信认证客户端
+	SECTION:=net
+	CATEGORY:=Network
+	TITLE:=uestc_ct_authclient
 endef
 
 define Package/uestc_ct_authclient/description
-  一个用于清水河电信认证的命令行客户端。
+	A command-line client for uestc ct authentication.
 endef
 
 define Build/Prepare
-	# 创建构建目录并复制预编译的二进制文件
+	# Copy pre-built binary file.
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./files/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-	# 已经有预编译的二进制文件，无需编译步骤
+	# Do Nothing
 	true
 endef
 
 define Build/InstallDev
-	# 不执行任何操作，避免调用默认的 `make install`
+	# Do Nothing
 	true
 endef
 
 define Build/Install
-	# 不执行任何操作，避免调用默认的 `make install`
+	# Do Nothing
 	true
 endef
 
