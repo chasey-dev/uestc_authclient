@@ -1,0 +1,133 @@
+<%+header%>
+
+<%
+local sys = require "luci.sys"
+local fs = require "nixio.fs"
+local uci = require "luci.model.uci".cursor()
+local http = require "luci.http"
+
+-- 服务的脚本路径
+local PROG = "/usr/bin/uestc_ct_authclient_monitor.sh"
+
+-- 处理表单提交
+if http.formvalue("action") == "start" then
+    sys.call("/etc/init.d/uestc_ct_authclient start")
+elseif http.formvalue("action") == "stop" then
+    sys.call("/etc/init.d/uestc_ct_authclient stop")
+elseif http.formvalue("action") == "clear_log" then
+    fs.writefile("/tmp/uestc_ct_authclient.log", "")
+end
+
+-- 检查服务是否正在运行
+local is_running = (sys.call("pgrep -f '" .. PROG .. "' >/dev/null") == 0)
+
+local status
+if is_running then
+    local heartbeat_host = uci:get("uestc_ct_authclient", "authclient", "heartbeat_host") or "223.5.5.5"
+    status = sys.exec("ping -c 1 -W 1 " .. heartbeat_host .. " >/dev/null 2>&1 && echo '已连接' || echo '未连接'")
+    status = status and status:gsub("\n", "") or "未知"
+else
+    status = "未运行"
+end
+
+local last_login = fs.readfile("/tmp/uestc_ct_authclient_last_login") or "无"
+
+%>
+
+<h2><%:清水河电信认证%></h2>
+
+<div class="cbi-map-descr">
+    <%:该页面显示清水河电信认证客户端的当前状态，并提供控制服务的功能。%>
+</div>
+
+<!-- 状态显示部分 -->
+<fieldset class="cbi-section">
+    <legend><%:状态%></legend>
+    <table class="cbi-section-table">
+        <colgroup>
+            <col width="50%" />
+            <col width="50%" />
+        </colgroup>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:网络状态%></strong></td>
+            <td class="cbi-section-table-cell" style="text-align: left;">
+                <% if status == "已连接" then %>
+                    <span style="color: green;"><strong><%=status%></strong></span>
+                <% elseif status == "未连接" then %>
+                    <span style="color: red;"><strong><%=status%></strong></span>
+                <% else %>
+                    <span><strong><%=status%></strong></span>
+                <% end %>
+            </td>
+        </tr>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:上次登录时间%></strong></td>
+            <td class="cbi-section-table-cell" style="text-align: left;"><%=last_login%></td>
+        </tr>
+        <tr class="cbi-section-table-row">
+            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:后台运行状态%></strong></td>
+            <td class="cbi-section-table-cell" style="text-align: left;">
+                <% if is_running then %>
+                    <span style="color: green;"><strong><%:正在运行%></strong></span>
+                <% else %>
+                    <span style="color: red;"><strong><%:未运行%></strong></span>
+                <% end %>
+            </td>
+        </tr>
+    </table>
+</fieldset>
+
+<!-- 控制部分 -->
+<fieldset class="cbi-section">
+    <legend><%:控制%></legend>
+    <form method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_ct_authclient")%>">
+        <table class="cbi-section-table">
+            <tr class="cbi-section-table-row">
+                <td class="cbi-section-table-cell" style="text-align: center;">
+                    <button type="submit" name="action" value="start" class="cbi-button cbi-input-apply" <% if is_running then %>disabled<% end %>><%:启动%></button>
+                </td>
+                <td class="cbi-section-table-cell" style="text-align: center;">
+                    <button type="submit" name="action" value="stop" class="cbi-button cbi-input-reset" <% if not is_running then %>disabled<% end %>><%:停止%></button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</fieldset>
+
+<!-- 日志显示部分 -->
+<fieldset class="cbi-section">
+    <legend><%:日志%></legend>
+    <form method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_ct_authclient")%>">
+        <textarea id="log_content" readonly="readonly" wrap="off" class="cbi-input-textarea" style="width:100%; height:300px;"></textarea>
+        <div style="text-align: right;">
+            <button type="submit" name="action" value="clear_log" class="cbi-button cbi-button-negative"><%:清除日志%></button>
+        </div>
+    </form>
+</fieldset>
+
+<script type="text/javascript">
+    function refreshLog() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_ct_authclient/get_log")%>?_t=' + new Date().getTime(), true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == XMLHttpRequest.DONE) {
+                if (xhr.status == 200) {
+                    var logContent = document.getElementById('log_content');
+                    var isAtBottom = (logContent.scrollTop + logContent.clientHeight) >= (logContent.scrollHeight - 5);
+                    logContent.value = xhr.responseText;
+                    if (isAtBottom) {
+                        logContent.scrollTop = logContent.scrollHeight;
+                    }
+                }
+            }
+        };
+        xhr.send(null);
+    }
+    // 初始获取日志内容
+    refreshLog();
+    // 每2秒刷新一次日志内容
+    setInterval(refreshLog, 2000);
+</script>
+
+<%+footer%>
+

@@ -1,0 +1,9 @@
+config authclient 'authclient'
+    option enabled '0'
+    option username ''
+    option password ''
+    option host '172.25.249.64'
+    option interface 'wan'
+    option heartbeat_host '223.5.5.5'
+    option check_interval '60'
+
