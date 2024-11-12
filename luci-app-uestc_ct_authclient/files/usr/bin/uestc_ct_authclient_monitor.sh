@@ -43,6 +43,7 @@ while true; do
     # 检查并清理日志
     if [ -f "$LOG_FILE" ]; then
         TEMP_LOG_FILE="${LOG_FILE}.tmp"
+        > "$TEMP_LOG_FILE"  # 确保临时文件存在
         while read -r line; do
             # 提取日志行的日期时间
             log_date=$(echo "$line" | awk '{print $1" "$2" "$3}')
@@ -59,7 +60,12 @@ while true; do
                 echo "$line" >> "$TEMP_LOG_FILE"
             fi
         done < "$LOG_FILE"
-        mv "$TEMP_LOG_FILE" "$LOG_FILE"
+        # 检查临时文件是否存在并且非空
+        if [ -s "$TEMP_LOG_FILE" ]; then
+            mv "$TEMP_LOG_FILE" "$LOG_FILE"
+        else
+            rm -f "$LOG_FILE" "$TEMP_LOG_FILE"
+        fi
     fi
 
     # 定时断网功能
@@ -67,7 +73,8 @@ while true; do
         if [ "$CURRENT_HOUR" -ge "$scheduled_disconnect_start" ] && [ "$CURRENT_HOUR" -lt "$scheduled_disconnect_end" ]; then
             if [ "$disconnect_done" -eq 0 ]; then
                 echo "$(date): 达到计划断网时间，断开网络连接。" >> $LOG_FILE
-                ifdown $INTERFACE
+                # 使用 ifconfig 禁用网络接口
+                ifconfig $INTERFACE down
                 disconnect_done=1
             fi
             sleep $CHECK_INTERVAL
@@ -75,7 +82,8 @@ while true; do
         else
             if [ "$disconnect_done" -eq 1 ]; then
                 echo "$(date): 计划断网时间结束，恢复网络连接。" >> $LOG_FILE
-                ifup $INTERFACE
+                # 使用 ifconfig 启用网络接口
+                ifconfig $INTERFACE up
                 disconnect_done=0
                 # 等待网络恢复
                 sleep 30

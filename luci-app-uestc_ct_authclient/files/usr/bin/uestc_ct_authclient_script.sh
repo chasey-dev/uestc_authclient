@@ -10,12 +10,12 @@ LOG_FILE="/tmp/uestc_ct_authclient.log"
 
 # 释放DHCP
 echo "$(date): 释放接口 $INTERFACE 的 DHCP..." >> $LOG_FILE
-ifdown $INTERFACE
+ifconfig $INTERFACE down
 sleep 1
 
 # 重新获取IP地址
 echo "$(date): 重新获取接口 $INTERFACE 的 IP 地址..." >> $LOG_FILE
-ifup $INTERFACE
+ifconfig $INTERFACE up
 
 # 等待接口获取IP地址
 MAX_WAIT=30
