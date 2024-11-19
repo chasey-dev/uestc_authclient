@@ -85,10 +85,13 @@ o:depends("scheduled_disconnect_enabled", "1")
 
 -- 校验时间段
 function o.validate(self, value, section)
-    local start_time = tonumber(m:get(section, "scheduled_disconnect_start"))
-    local end_time = tonumber(value)
-    if start_time and end_time and start_time == end_time then
-        return nil, translate("断网开始时间和结束时间不能相同！")
+    local enabled = m:get(section, "scheduled_disconnect_enabled")
+    if enabled == "1" then
+        local start_time = tonumber(m:get(section, "scheduled_disconnect_start"))
+        local end_time = tonumber(value)
+        if start_time and end_time and start_time == end_time then
+            return nil, translate("断网开始时间和结束时间不能相同！")
+        end
     end
     return value
 end
@@ -99,11 +102,12 @@ o = s:option(Value, "ct_client_username", translate("电信认证方式用户名
 o.datatype = "string"
 o.description = translate("您的电信认证方式用户名。")
 o.placeholder = translate("必填")
-o.rmempty = false
+o.rmempty = true
 o:depends("client_type", "ct")
 
 function o.validate(self, value, section)
-    if m:get(section, "client_type") == "ct" then
+    local client_type = m:get(section, "client_type")
+    if client_type == "ct" then
         if value == nil or value == "" then
             return nil, translate("用户名不能为空。")
         end
@@ -117,11 +121,12 @@ o.datatype = "string"
 o.password = true
 o.description = translate("您的电信认证方式密码。")
 o.placeholder = translate("必填")
-o.rmempty = false
+o.rmempty = true
 o:depends("client_type", "ct")
 
 function o.validate(self, value, section)
-    if m:get(section, "client_type") == "ct" then
+    local client_type = m:get(section, "client_type")
+    if client_type == "ct" then
         if value == nil or value == "" then
             return nil, translate("密码不能为空。")
         end
@@ -143,11 +148,12 @@ o = s:option(Value, "srun_client_username", translate("Srun 认证方式用户�
 o.datatype = "string"
 o.description = translate("您的 Srun 认证方式用户名。")
 o.placeholder = translate("必填")
-o.rmempty = false
+o.rmempty = true
 o:depends("client_type", "srun")
 
 function o.validate(self, value, section)
-    if m:get(section, "client_type") == "srun" then
+    local client_type = m:get(section, "client_type")
+    if client_type == "srun" then
         if value == nil or value == "" then
             return nil, translate("用户名不能为空。")
         end
@@ -161,11 +167,12 @@ o.datatype = "string"
 o.password = true
 o.description = translate("您的 Srun 认证方式密码。")
 o.placeholder = translate("必填")
-o.rmempty = false
+o.rmempty = true
 o:depends("client_type", "srun")
 
 function o.validate(self, value, section)
-    if m:get(section, "client_type") == "srun" then
+    local client_type = m:get(section, "client_type")
+    if client_type == "srun" then
         if value == nil or value == "" then
             return nil, translate("密码不能为空。")
         end
