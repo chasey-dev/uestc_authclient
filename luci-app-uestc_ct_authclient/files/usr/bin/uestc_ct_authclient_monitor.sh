@@ -6,7 +6,7 @@ CHECK_INTERVAL=$(uci get uestc_ct_authclient.@authclient[0].check_interval 2>/de
 
 # 获取心跳检测地址列表
 HEARTBEAT_HOSTS=$(uci -q get uestc_ct_authclient.@authclient[0].heartbeat_hosts)
-[ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 8.8.8.8"
+[ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
 
 INTERFACE=$(uci get uestc_ct_authclient.@authclient[0].interface 2>/dev/null)
 [ -z "$INTERFACE" ] && INTERFACE="wan"

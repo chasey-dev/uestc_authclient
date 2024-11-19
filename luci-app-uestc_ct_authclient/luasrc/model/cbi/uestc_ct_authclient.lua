@@ -71,7 +71,7 @@ end
 -- 心跳检测地址（支持多个）
 o = s:option(DynamicList, "heartbeat_hosts", translate("心跳检测地址"))
 o.datatype = "host"
-o.default = {"223.5.5.5", "8.8.8.8"}
+o.default = {"223.5.5.5", "119.29.29.29"}
 o.description = translate("用于检测网络连通性的主机地址，可以添加多个地址。")
 
 -- 心跳检测间隔
