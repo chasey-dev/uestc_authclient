@@ -1,22 +1,35 @@
 #!/bin/sh
 
 # 获取配置
-CHECK_INTERVAL=$(uci get uestc_ct_authclient.@authclient[0].check_interval 2>/dev/null)
+CLIENT_TYPE=$(uci get uestc_authclient.@authclient[0].client_type 2>/dev/null)
+[ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"  # 默认使用 ct 客户端
+
+CHECK_INTERVAL=$(uci get uestc_authclient.@authclient[0].check_interval 2>/dev/null)
 [ -z "$CHECK_INTERVAL" ] && CHECK_INTERVAL=30  # 默认检测间隔30秒
 
 # 获取心跳检测地址列表
-HEARTBEAT_HOSTS=$(uci -q get uestc_ct_authclient.@authclient[0].heartbeat_hosts)
+HEARTBEAT_HOSTS=$(uci -q get uestc_authclient.@authclient[0].heartbeat_hosts)
 [ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
 
-INTERFACE=$(uci get uestc_ct_authclient.@authclient[0].interface 2>/dev/null)
+INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
 [ -z "$INTERFACE" ] && INTERFACE="wan"
 
-LOG_RETENTION_DAYS=$(uci get uestc_ct_authclient.@authclient[0].log_retention_days 2>/dev/null)
+LOG_RETENTION_DAYS=$(uci get uestc_authclient.@authclient[0].log_retention_days 2>/dev/null)
 [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
 
-LOG_FILE="/tmp/uestc_ct_authclient.log"
+LOG_FILE="/tmp/uestc_authclient.log"
 
 echo "$(date): 监控脚本已启动。" >> $LOG_FILE
+
+# 根据客户端类型，调用不同的登录脚本
+if [ "$CLIENT_TYPE" = "ct" ]; then
+    AUTH_SCRIPT="/usr/bin/uestc_ct_authclient_script.sh"
+elif [ "$CLIENT_TYPE" = "srun" ]; then
+    AUTH_SCRIPT="/usr/bin/uestc_srun_authclient_script.sh"
+else
+    echo "$(date): 未知的客户端类型：$CLIENT_TYPE" >> $LOG_FILE
+    exit 1
+fi
 
 # 定义最大连续失败次数
 MAX_FAILURES=2  # 最大失败次数
@@ -114,7 +127,7 @@ while true; do
         echo "$(date): 网络连通性检查失败 ($failure_count/$MAX_FAILURES)" >> $LOG_FILE
         if [ "$failure_count" -ge "$MAX_FAILURES" ]; then
             echo "$(date): 连续 $MAX_FAILURES 次网络不可达，尝试重新登录..." >> $LOG_FILE
-            /usr/bin/uestc_ct_authclient_script.sh >> $LOG_FILE 2>&1
+            $AUTH_SCRIPT >> $LOG_FILE 2>&1
             failure_count=0
         fi
         network_down=1

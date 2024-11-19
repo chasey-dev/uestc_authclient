@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # 获取监听接口
-INTERFACE=$(uci get uestc_ct_authclient.@authclient[0].interface 2>/dev/null)
+INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
 if [ -z "$INTERFACE" ]; then
     INTERFACE="wan"
 fi
 
-LOG_FILE="/tmp/uestc_ct_authclient.log"
+LOG_FILE="/tmp/uestc_authclient.log"
 
 # 释放DHCP
 echo "$(date): 释放接口 $INTERFACE 的 DHCP..." >> $LOG_FILE
@@ -45,7 +45,7 @@ echo "$LOGIN_OUTPUT" >> $LOG_FILE
 # 检查登录是否成功
 if echo "$LOGIN_OUTPUT" | grep -q "\[INFO\] 使用账号"; then
     # 登录成功，记录登录时间
-    date > /tmp/uestc_ct_authclient_last_login
+    date > /tmp/uestc_authclient_last_login
     echo "$(date): 登录成功，更新上次登录时间。" >> $LOG_FILE
 else
     echo "$(date): 登录失败，未更新上次登录时间。" >> $LOG_FILE

@@ -1,0 +1,54 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+USE_PROCD=1
+LOG_FILE="/tmp/uestc_authclient.log"
+
+boot() {
+    enabled=$(uci get uestc_authclient.@authclient[0].enabled 2>/dev/null)
+    if [ "$enabled" = "1" ]; then
+        start
+    else
+        echo "$(date): UESTC 认证客户端在配置中被禁用，不启动服务。" >> $LOG_FILE
+    fi
+}
+
+start_service() {
+    sleep 2
+
+    PROG="/usr/bin/uestc_authclient_monitor.sh"
+
+    CLIENT_TYPE=$(uci get uestc_authclient.@authclient[0].client_type 2>/dev/null)
+    [ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"
+
+    if [ "$CLIENT_TYPE" = "ct" ]; then
+        USERNAME=$(uci get uestc_authclient.@authclient[0].ct_client_username 2>/dev/null)
+        PASSWORD=$(uci get uestc_authclient.@authclient[0].ct_client_password 2>/dev/null)
+    elif [ "$CLIENT_TYPE" = "srun" ]; then
+        USERNAME=$(uci get uestc_authclient.@authclient[0].srun_client_username 2>/dev/null)
+        PASSWORD=$(uci get uestc_authclient.@authclient[0].srun_client_password 2>/dev/null)
+    else
+        echo "$(date): 未知的客户端类型：$CLIENT_TYPE" >> $LOG_FILE
+        return 1
+    fi
+
+    if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+        echo "$(date): 用户名或密码未设置，服务无法启动。" >> $LOG_FILE
+        return 1
+    fi
+
+    echo "$(date): 服务已启动。" >> $LOG_FILE
+
+    procd_open_instance
+    procd_set_param command $PROG
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_close_instance
+}
+
+stop_service() {
+    echo "$(date): 服务已停止。" >> $LOG_FILE
+    # procd 会自动处理停止进程
+}
