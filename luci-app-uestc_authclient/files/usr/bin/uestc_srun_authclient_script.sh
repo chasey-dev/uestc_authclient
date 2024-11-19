@@ -2,9 +2,7 @@
 
 # 获取监听接口
 INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
-if [ -z "$INTERFACE" ]; then
-    INTERFACE="wan"
-fi
+[ -z "$INTERFACE" ] && INTERFACE="wan"
 
 # 获取 srun_client 配置项
 USERNAME=$(uci get uestc_authclient.@authclient[0].srun_client_username 2>/dev/null)
@@ -15,6 +13,12 @@ HOST=$(uci get uestc_authclient.@authclient[0].srun_client_host 2>/dev/null)
 [ -z "$HOST" ] && HOST="10.253.0.237"
 
 LOG_FILE="/tmp/uestc_authclient.log"
+
+# 检查用户名和密码是否设置
+if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+    echo "$(date): Srun 认证方式的用户名或密码未设置，无法登录。" >> $LOG_FILE
+    exit 1
+fi
 
 # 释放DHCP
 echo "$(date): 释放接口 $INTERFACE 的 DHCP..." >> $LOG_FILE
@@ -51,17 +55,17 @@ else
 fi
 
 # 执行登录程序，并捕获输出
-echo "$(date): 执行 srun_client 认证方式..." >> $LOG_FILE
-LOGIN_OUTPUT=$(/usr/bin/uestc_srun_authclient 2>&1)
+echo "$(date): 执行 Srun 认证方式登录程序..." >> $LOG_FILE
+LOGIN_OUTPUT=$(/usr/bin/uestc_srun_authclient -ip "$INTERFACE_IP" -n "$USERNAME" -p "$PASSWORD" $MODE_FLAG -host "$HOST" -d 2>&1)
 
 # 将登录输出写入日志
 echo "$LOGIN_OUTPUT" >> $LOG_FILE
 
 # 检查登录是否成功
-if echo "$LOGIN_OUTPUT" | grep -q "\[INFO\] 使用账号"; then
+if echo "$LOGIN_OUTPUT" | grep -q "success"; then
     # 登录成功，记录登录时间
     date > /tmp/uestc_authclient_last_login
-    echo "$(date): srun_client 登录成功，更新上次登录时间。" >> $LOG_FILE
+    echo "$(date): Srun 认证方式登录成功，更新上次登录时间。" >> $LOG_FILE
 else
-    echo "$(date): srun_client 登录失败，未更新上次登录时间。" >> $LOG_FILE
+    echo "$(date): Srun 认证方式登录失败，未更新上次登录时间。" >> $LOG_FILE
 fi
