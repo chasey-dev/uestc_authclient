@@ -36,13 +36,13 @@ MAX_FAILURES=2  # 最大失败次数
 failure_count=0
 network_down=0  # 用于记录网络是否处于故障状态
 
-scheduled_disconnect_enabled=$(uci get uestc_ct_authclient.@authclient[0].scheduled_disconnect_enabled 2>/dev/null)
+scheduled_disconnect_enabled=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_enabled 2>/dev/null)
 [ -z "$scheduled_disconnect_enabled" ] && scheduled_disconnect_enabled=0
 
-scheduled_disconnect_start=$(uci get uestc_ct_authclient.@authclient[0].scheduled_disconnect_start 2>/dev/null)
+scheduled_disconnect_start=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_start 2>/dev/null)
 [ -z "$scheduled_disconnect_start" ] && scheduled_disconnect_start=3
 
-scheduled_disconnect_end=$(uci get uestc_ct_authclient.@authclient[0].scheduled_disconnect_end 2>/dev/null)
+scheduled_disconnect_end=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_end 2>/dev/null)
 [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
 
 disconnect_done=0  # 是否已经断开网络

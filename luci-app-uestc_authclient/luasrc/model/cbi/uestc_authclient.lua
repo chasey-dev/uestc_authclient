@@ -181,7 +181,7 @@ o:value("edu", translate("校园网"))
 o.description = translate("选择 Srun 客户端的认证方式。")
 o:depends("client_type", "srun")
 
--- 认证服务器 IP
+-- 登录主机
 o = s:option(Value, "srun_client_host", translate("Srun 认证方式登录主机"))
 o.datatype = "ipaddr"
 o.default = "10.253.0.237"
