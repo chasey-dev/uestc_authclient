@@ -32,9 +32,10 @@ else
 fi
 
 # 定义最大连续失败次数
-MAX_FAILURES=2  # 最大失败次数
+MAX_FAILURES=3  # 最大失败次数
 failure_count=0
 network_down=0  # 用于记录网络是否处于故障状态
+CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL #初始化网络检测间隔
 
 scheduled_disconnect_enabled=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_enabled 2>/dev/null)
 [ -z "$scheduled_disconnect_enabled" ] && scheduled_disconnect_enabled=0
@@ -140,10 +141,9 @@ while true; do
         failure_count=0
         network_down=0
     fi
-
-    # 动态调整检测间隔
+    
     if [ "$failure_count" -ge 1 ]; then
-        CURRENT_CHECK_INTERVAL=10  # 网络异常时，缩短检测间隔为10秒
+        CURRENT_CHECK_INTERVAL=$((CURRENT_CHECK_INTERVAL / 2))  # 网络异常时，缩短检测间隔减半
     else
         CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL  # 网络正常时，使用默认检测间隔
     fi
