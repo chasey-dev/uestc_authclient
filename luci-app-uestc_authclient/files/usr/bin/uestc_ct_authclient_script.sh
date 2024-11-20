@@ -6,6 +6,12 @@ if [ -z "$INTERFACE" ]; then
     INTERFACE="wan"
 fi
 
+# 获取 ct_client 配置项
+USERNAME=$(uci get uestc_authclient.@authclient[0].ct_client_username 2>/dev/null)
+PASSWORD=$(uci get uestc_authclient.@authclient[0].ct_client_password 2>/dev/null)
+HOST=$(uci get uestc_authclient.@authclient[0].ct_client_host 2>/dev/null)
+[ -z "$HOST" ] && HOST="172.25.249.64"
+
 LOG_FILE="/tmp/uestc_authclient.log"
 
 # 释放DHCP
@@ -36,8 +42,9 @@ if [ -z "$INTERFACE_IP" ]; then
 fi
 
 # 执行登录程序，并捕获输出
-echo "$(date): 执行登录程序..." >> $LOG_FILE
-LOGIN_OUTPUT=$(/usr/bin/uestc_ct_authclient 2>&1)
+echo "$(date): 执行电信登录程序..." >> $LOG_FILE
+LOGIN_OUTPUT=$(/usr/bin/uestc_ct_authclient \
+    -name "$USERNAME" -passwd "$PASSWORD" -host "$HOST" -localip "$INTERFACE_IP" 2>&1)
 
 # 将登录输出写入日志
 echo "$LOGIN_OUTPUT" >> $LOG_FILE

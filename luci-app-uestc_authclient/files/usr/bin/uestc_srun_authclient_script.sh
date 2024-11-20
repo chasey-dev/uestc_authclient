@@ -56,7 +56,8 @@ fi
 
 # 执行登录程序，并捕获输出
 echo "$(date): 执行 Srun 认证方式登录程序..." >> $LOG_FILE
-LOGIN_OUTPUT=$(/usr/bin/uestc_srun_authclient -ip "$INTERFACE_IP" -n "$USERNAME" -p "$PASSWORD" $MODE_FLAG -host "$HOST" -d 2>&1)
+LOGIN_OUTPUT=$(/usr/bin/uestc_srun_authclient \
+    -ip "$INTERFACE_IP" -n "$USERNAME" -p "$PASSWORD" $MODE_FLAG -host "$HOST" -d 2>&1)
 
 # 将登录输出写入日志
 echo "$LOGIN_OUTPUT" >> $LOG_FILE

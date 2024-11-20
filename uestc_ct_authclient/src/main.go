@@ -312,6 +312,7 @@ func (c *loginClient) saveCache() {
 	}
 }
 
+/*
 func (c *loginClient) loadUCIConfig() {
 	// 获取用户名
 	out, err := exec.Command("uci", "get", "uestc_ct_authclient.@authclient[0].username").Output()
@@ -329,26 +330,30 @@ func (c *loginClient) loadUCIConfig() {
 		c.initHost = strings.TrimSpace(string(out))
 	}
 }
+*/
 
 func (c *loginClient) run() {
 	// 加载UCI配置
-	c.loadUCIConfig()
+	//c.loadUCIConfig()
 
-	flag.StringVar(&c.username, "name", c.username, "账号名称，通常为手机号")
+	/*flag.StringVar(&c.username, "name", c.username, "账号名称，通常为手机号")
 	flag.StringVar(&c.password, "passwd", c.password, "账号密码")
-	flag.StringVar(&c.initHost, "host", c.initHost, "登录页面的域名，通常为IP地址")
+	flag.StringVar(&c.initHost, "host", c.initHost, "登录页面的域名，通常为IP地址")*/
+
+	flag.StringVar(&c.username, "name", "", "账号名称，通常为手机号")
+	flag.StringVar(&c.password, "passwd", "", "账号密码")
+	flag.StringVar(&c.initHost, "host", "172.25.249.64", "登录页面的域名，通常为IP地址")
 	flag.StringVar(&c.cachePath, "cache", "", "指定读取和存储缓存的位置，留空以禁用")
 	flag.StringVar(&c.userIndex, "index", "", "用户索引，仅用于注销")
 	flag.StringVar(&c.localIP, "localip", "", "绑定的本地IP地址")
 	logout := flag.Bool("logout", false, "是否注销当前用户")
 	flag.Parse()
 
-	if c.username == "" || c.password == "" || c.initHost == "" {
-		logWithLevel(ERROR, "必须提供用户名、密码和主机地址")
-		os.Exit(1)
-	}
-
 	if !*logout {
+		if (c.cachePath == "") && (c.username == "" || c.password == "") {
+			logWithLevel(ERROR,"必须提供用户名、密码")
+			os.Exit(1)
+		}
 		c.loadCache()
 		c.loginInit()
 		c.getEncryptKey()
