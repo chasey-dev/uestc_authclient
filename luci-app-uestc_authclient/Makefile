@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 LUCI_TITLE:=清水河认证
 LUCI_PKGARCH:=all
 PKG_NAME:=luci-app-uestc_authclient
-PKG_VERSION:=1.2
+PKG_VERSION:=2.0
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
