@@ -46,4 +46,3 @@ define Package/uestc_ct_authclient/install
 endef
 
 $(eval $(call BuildPackage,uestc_ct_authclient))
-

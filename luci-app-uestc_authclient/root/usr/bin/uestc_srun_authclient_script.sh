@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# define srun authclient binary file to use
+SRUN_BIN="/usr/bin/go-nd-portal"
+
 # 获取监听接口
 INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
 [ -z "$INTERFACE" ] && INTERFACE="wan"
@@ -56,7 +59,7 @@ fi
 
 # 执行登录程序，并捕获输出
 echo "$(date): 执行 Srun 认证方式登录程序..." >> $LOG_FILE
-LOGIN_OUTPUT=$(/usr/bin/uestc_srun_authclient \
+LOGIN_OUTPUT=$($SRUN_BIN \
     -ip "$INTERFACE_IP" -n "$USERNAME" -p "$PASSWORD" $MODE_FLAG -d 2>&1)
 
 # 将登录输出写入日志
