@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luci-app-uestc_authclient
+PKG_NAME:=luci-app-uestc-authclient
 PKG_VERSION:=2.0
 PKG_RELEASE:=1
 
