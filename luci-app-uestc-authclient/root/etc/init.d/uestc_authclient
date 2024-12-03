@@ -6,12 +6,31 @@ STOP=10
 USE_PROCD=1
 LOG_FILE="/tmp/uestc_authclient.log"
 
+# Get the system language
+LANG=$(uci get luci.main.lang 2>/dev/null)
+[ -z "$LANG" ] && LANG="en"
+
+# Define messages based on the language
+if [ "$LANG" = "zh_cn" ]; then
+    MSG_DISABLED="UESTC 认证客户端在配置中被禁用，不启动服务。"
+    MSG_UNKNOWN_CLIENT_TYPE="未知的客户端类型："
+    MSG_USERNAME_PASSWORD_NOT_SET="用户名或密码未设置，服务无法启动。"
+    MSG_SERVICE_STARTED="服务已启动。"
+    MSG_SERVICE_STOPPED="服务已停止。"
+else
+    MSG_DISABLED="UESTC authentication client is disabled in the configuration, not starting service."
+    MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
+    MSG_USERNAME_PASSWORD_NOT_SET="Username or password not set, service cannot start."
+    MSG_SERVICE_STARTED="Service started."
+    MSG_SERVICE_STOPPED="Service stopped."
+fi
+
 boot() {
     enabled=$(uci get uestc_authclient.@authclient[0].enabled 2>/dev/null)
     if [ "$enabled" = "1" ]; then
         start
     else
-        echo "$(date): UESTC 认证客户端在配置中被禁用，不启动服务。" >> $LOG_FILE
+        echo "$(date): $MSG_DISABLED" >> $LOG_FILE
     fi
 }
 
@@ -30,16 +49,16 @@ start_service() {
         USERNAME=$(uci get uestc_authclient.@authclient[0].srun_client_username 2>/dev/null)
         PASSWORD=$(uci get uestc_authclient.@authclient[0].srun_client_password 2>/dev/null)
     else
-        echo "$(date): 未知的客户端类型：$CLIENT_TYPE" >> $LOG_FILE
+        echo "$(date): $MSG_UNKNOWN_CLIENT_TYPE $CLIENT_TYPE" >> $LOG_FILE
         return 1
     fi
 
     if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
-        echo "$(date): 用户名或密码未设置，服务无法启动。" >> $LOG_FILE
+        echo "$(date): $MSG_USERNAME_PASSWORD_NOT_SET" >> $LOG_FILE
         return 1
     fi
 
-    echo "$(date): 服务已启动。" >> $LOG_FILE
+    echo "$(date): $MSG_SERVICE_STARTED" >> $LOG_FILE
 
     procd_open_instance
     procd_set_param command $PROG
@@ -49,6 +68,6 @@ start_service() {
 }
 
 stop_service() {
-    echo "$(date): 服务已停止。" >> $LOG_FILE
-    # procd 会自动处理停止进程
+    echo "$(date): $MSG_SERVICE_STOPPED" >> $LOG_FILE
+    # procd will automatically handle stopping the process
 }

@@ -1,8 +1,8 @@
 config authclient 'authclient'
     option enabled '0'
-    option client_type 'ct'  # 支持 'ct' 或 'srun'
+    option client_type 'ct'  # Supports 'ct' or 'srun'
 
-    # 通用配置项
+    # General settings
     option interface 'wan'
     list heartbeat_hosts '223.5.5.5'
     list heartbeat_hosts '119.29.29.29'
@@ -12,14 +12,14 @@ config authclient 'authclient'
     option scheduled_disconnect_start '3'
     option scheduled_disconnect_end '4'
 
-    # ct_client 特有配置项
+    # CT client settings
     option ct_client_username ''
     option ct_client_password ''
     option ct_client_host '172.25.249.64'
 
-    # srun_client 特有配置项
+    # Srun client settings
     option srun_client_username ''
     option srun_client_password ''
-    option srun_client_auth_mode 'dx'  # 认证方式，例如 'dx'、'edu' 等
-    option srun_client_host '10.253.0.237'  # 认证服务器 IP
-    # 其他 srun_client 特有配置项...
+    option srun_client_auth_mode 'dx'  # Authentication mode, e.g., 'dx', 'edu', etc.
+    option srun_client_host '10.253.0.237'  # Authentication server IP
+    # Other srun_client specific settings...

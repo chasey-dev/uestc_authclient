@@ -6,10 +6,10 @@ local fs = require "nixio.fs"
 local uci = require "luci.model.uci".cursor()
 local http = require "luci.http"
 
--- 服务的脚本路径
+-- Path to the service script
 local PROG = "/usr/bin/uestc_authclient_monitor.sh"
 
--- 处理表单提交
+-- Handle form submissions
 if http.formvalue("action") == "start" then
     sys.call("/etc/init.d/uestc_authclient start")
 elseif http.formvalue("action") == "stop" then
@@ -18,50 +18,50 @@ elseif http.formvalue("action") == "clear_log" then
     fs.writefile("/tmp/uestc_authclient.log", "")
 end
 
--- 检查服务是否正在运行
+-- Check if the service is running
 local is_running = (sys.call("pgrep -f '" .. PROG .. "' >/dev/null") == 0)
 
--- 检查网络状态
-local network_status = "未运行"
+-- Check network status
+local network_status = translate("Not running")
 if is_running then
-    -- 获取心跳检测地址列表
+    -- Get the list of heartbeat hosts
     local heartbeat_hosts = uci:get_list("uestc_authclient", "authclient", "heartbeat_hosts") or {"223.5.5.5", "119.29.29.29"}
-    -- 检查网络连通性
-    network_status = "未连接"
+    -- Check network connectivity
+    network_status = translate("Disconnected")
     for _, host in ipairs(heartbeat_hosts) do
         if sys.call("ping -c 1 -W 1 " .. host .. " >/dev/null 2>&1") == 0 then
-            network_status = "已连接"
+            network_status = translate("Connected")
             break
         end
     end
 else
-    network_status = "未运行"
+    network_status = translate("Not running")
 end
 
-local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or "无"
+local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate("None")
 
 %>
 
-<h2><%:UESTC 清水河认证%></h2>
+<h2><%:UESTC Authentication%></h2>
 
 <div class="cbi-map-descr">
-    <%:该页面显示UESTC 清水河认证客户端的当前状态，并提供控制服务的功能。%>
+    <%:This page displays the current status of the UESTC authentication client and provides control functions.%>
 </div>
 
-<!-- 状态显示部分 -->
+<!-- Status section -->
 <fieldset class="cbi-section">
-    <legend><%:状态%></legend>
+    <legend><%:Status%></legend>
     <table class="cbi-section-table">
         <colgroup>
             <col width="50%" />
             <col width="50%" />
         </colgroup>
         <tr class="cbi-section-table-row">
-            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:网络状态%></strong></td>
+            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:Network Status%></strong></td>
             <td class="cbi-section-table-cell" style="text-align: left;">
-                <% if network_status == "已连接" then %>
+                <% if network_status == translate("Connected") then %>
                     <span style="color: green;"><strong><%=network_status%></strong></span>
-                <% elseif network_status == "未连接" then %>
+                <% elseif network_status == translate("Disconnected") then %>
                     <span style="color: red;"><strong><%=network_status%></strong></span>
                 <% else %>
                     <span><strong><%=network_status%></strong></span>
@@ -69,46 +69,46 @@ local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or "无"
             </td>
         </tr>
         <tr class="cbi-section-table-row">
-            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:上次登录时间%></strong></td>
+            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:Last Login Time%></strong></td>
             <td class="cbi-section-table-cell" style="text-align: left;"><%=last_login%></td>
         </tr>
         <tr class="cbi-section-table-row">
-            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:后台运行状态%></strong></td>
+            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:Service Status%></strong></td>
             <td class="cbi-section-table-cell" style="text-align: left;">
                 <% if is_running then %>
-                    <span style="color: green;"><strong><%:正在运行%></strong></span>
+                    <span style="color: green;"><strong><%:Running%></strong></span>
                 <% else %>
-                    <span style="color: red;"><strong><%:未运行%></strong></span>
+                    <span style="color: red;"><strong><%:Not running%></strong></span>
                 <% end %>
             </td>
         </tr>
     </table>
 </fieldset>
 
-<!-- 控制部分 -->
+<!-- Control section -->
 <fieldset class="cbi-section">
-    <legend><%:控制%></legend>
+    <legend><%:Control%></legend>
     <form method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
         <table class="cbi-section-table">
             <tr class="cbi-section-table-row">
                 <td class="cbi-section-table-cell" style="text-align: center;">
-                    <button type="submit" name="action" value="start" class="cbi-button cbi-input-apply" <% if is_running then %>disabled<% end %>><%:启动%></button>
+                    <button type="submit" name="action" value="start" class="cbi-button cbi-input-apply" <% if is_running then %>disabled<% end %>><%:Start%></button>
                 </td>
                 <td class="cbi-section-table-cell" style="text-align: center;">
-                    <button type="submit" name="action" value="stop" class="cbi-button cbi-input-reset" <% if not is_running then %>disabled<% end %>><%:停止%></button>
+                    <button type="submit" name="action" value="stop" class="cbi-button cbi-input-reset" <% if not is_running then %>disabled<% end %>><%:Stop%></button>
                 </td>
             </tr>
         </table>
     </form>
 </fieldset>
 
-<!-- 日志显示部分 -->
+<!-- Log display section -->
 <fieldset class="cbi-section">
-    <legend><%:日志%></legend>
+    <legend><%:Logs%></legend>
     <form method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
         <textarea id="log_content" readonly="readonly" wrap="off" class="cbi-input-textarea" style="width:100%; height:300px;"></textarea>
         <div style="text-align: right;">
-            <button type="submit" name="action" value="clear_log" class="cbi-button cbi-button-negative"><%:清除日志%></button>
+            <button type="submit" name="action" value="clear_log" class="cbi-button cbi-button-negative"><%:Clear Logs%></button>
         </div>
     </form>
 </fieldset>
@@ -131,9 +131,9 @@ local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or "无"
         };
         xhr.send(null);
     }
-    // 初始获取日志内容
+    // Initial log fetch
     refreshLog();
-    // 每2秒刷新一次日志内容
+    // Refresh log every 2 seconds
     setInterval(refreshLog, 2000);
 </script>
 
