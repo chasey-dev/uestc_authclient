@@ -21,8 +21,8 @@ o.description = translate("Check to run the service automatically at system star
 o = s:option(ListValue, "client_type", translate("Authentication method"))
 o.default = "ct"
 o.description = translate("Select the authentication method. New dormitories and teaching areas use the Srun authentication method.")
-o:value("ct", translate("CT authentication method (uestc_ct_authclient)"))
-o:value("srun", translate("Srun authentication method (uestc_srun_authclient)"))
+o:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
+o:value("srun", translate("Srun authentication method (go-nd-portal)"))
 o.rmempty = false
 
 -- CT client settings
