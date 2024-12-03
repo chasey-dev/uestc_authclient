@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# define srun authclient binary file to use
+CT_BIN="/usr/bin/qsh-telecom-autologin"
+
 # 获取监听接口
 INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
 if [ -z "$INTERFACE" ]; then
@@ -43,7 +46,7 @@ fi
 
 # 执行登录程序，并捕获输出
 echo "$(date): 执行电信登录程序..." >> $LOG_FILE
-LOGIN_OUTPUT=$(/usr/bin/uestc_ct_authclient \
+LOGIN_OUTPUT=$($CT_BIN \
     -name "$USERNAME" -passwd "$PASSWORD" -host "$HOST" -localip "$INTERFACE_IP" 2>&1)
 
 # 将登录输出写入日志
