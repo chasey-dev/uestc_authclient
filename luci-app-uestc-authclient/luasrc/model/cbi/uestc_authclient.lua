@@ -17,7 +17,13 @@ o.default = "0"
 o.rmempty = false
 o.description = translate("Check to run the service automatically at system startup.")
 
--- Client type selection
+-- Limited monitoring
+o = s:option(Flag, "limited_monitoring", translate("Limited Monitoring"))
+o.default = "1"
+o.rmempty = true
+o.description = translate("Check to limit monitoring and reconnection attempts to within 10 minutes around the last login time.")
+
+-- Authentication method selection
 o = s:option(ListValue, "client_type", translate("Authentication method"))
 o.default = "ct"
 o.description = translate("Select the authentication method. New dormitories and teaching areas use the Srun authentication method.")

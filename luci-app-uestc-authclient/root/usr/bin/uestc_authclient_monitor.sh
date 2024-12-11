@@ -20,6 +20,10 @@ if [ "$LANG" = "zh_cn" ]; then
     MSG_SERVICE_STARTED="服务已启动。"
     MSG_SERVICE_STOPPED="服务已停止。"
     MSG_LOG_CLEARED="日志已清除。"
+    MSG_LIMITED_MONITORING_ENABLED="限时监控已启用。"
+    MSG_LIMITED_MONITORING_DISABLED="限时监控已禁用。"
+    MSG_MONITOR_WINDOW_ACTIVE="在监控时间窗口内，进行网络监控和重连。"
+    MSG_MONITOR_WINDOW_INACTIVE="不在监控时间窗口内，暂停网络监控和重连。"
 else
     MSG_MONITOR_STARTED="Monitor script started."
     MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
@@ -35,6 +39,10 @@ else
     MSG_SERVICE_STARTED="Service started."
     MSG_SERVICE_STOPPED="Service stopped."
     MSG_LOG_CLEARED="Logs have been cleared."
+    MSG_LIMITED_MONITORING_ENABLED="Limited monitoring enabled."
+    MSG_LIMITED_MONITORING_DISABLED="Limited monitoring disabled."
+    MSG_MONITOR_WINDOW_ACTIVE="Within monitoring time window, performing network monitoring and reconnection."
+    MSG_MONITOR_WINDOW_INACTIVE="Outside monitoring time window, pausing network monitoring and reconnection."
 fi
 
 # Get configuration
@@ -53,6 +61,10 @@ INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
 
 LOG_RETENTION_DAYS=$(uci get uestc_authclient.@authclient[0].log_retention_days 2>/dev/null)
 [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
+
+# Limited monitoring
+LIMITED_MONITORING=$(uci get uestc_authclient.@authclient[0].limited_monitoring 2>/dev/null)
+[ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
 
 LOG_FILE="/tmp/uestc_authclient.log"
 
@@ -84,6 +96,12 @@ scheduled_disconnect_end=$(uci get uestc_authclient.@authclient[0].scheduled_dis
 [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
 
 disconnect_done=0  # Indicates if disconnection has been performed
+
+if [ "$LIMITED_MONITORING" -eq 1 ]; then
+    echo "$(date): $MSG_LIMITED_MONITORING_ENABLED" >> $LOG_FILE
+else
+    echo "$(date): $MSG_LIMITED_MONITORING_DISABLED" >> $LOG_FILE
+fi
 
 while true; do
     CURRENT_TIME=$(date +%s)
@@ -139,6 +157,46 @@ while true; do
                 # Wait for network to recover
                 sleep 30
             fi
+        fi
+    fi
+
+    # Limited monitoring feature
+    if [ "$LIMITED_MONITORING" -eq 1 ]; then
+        LAST_LOGIN=$(cat /tmp/uestc_authclient_last_login 2>/dev/null)
+        # Convert last login time to seconds since epoch
+        if [ -n "$LAST_LOGIN" ]; then
+        
+            # Extract time (hours and minutes) from last login time
+            LOGIN_HOUR=$(date -d "$LAST_LOGIN" +%H)
+            LOGIN_MIN=$(date -d "$LAST_LOGIN" +%M)
+            # Convert times to minutes since midnight
+            LOGIN_TOTAL_MIN=$((10#$LOGIN_HOUR * 60 + 10#$LOGIN_MIN))
+            
+            # Current time
+            CURRENT_HOUR=$(date +%H)
+            CURRENT_MIN=$(date +%M)
+            # Calculate difference
+            CURRENT_TOTAL_MIN=$((10#$CURRENT_HOUR * 60 + 10#$CURRENT_MIN))
+            
+            # Adjust for day wrap-around
+            DIFF_MIN=$((CURRENT_TOTAL_MIN - LOGIN_TOTAL_MIN))
+            if [ $DIFF_MIN -lt -720 ]; then  # More than 12 hours behind
+                DIFF_MIN=$((DIFF_MIN + 1440)) # Add 24 hours
+            elif [ $DIFF_MIN -gt 720 ]; then # More than 12 hours ahead
+                DIFF_MIN=$((DIFF_MIN - 1440)) # Subtract 24 hours
+            fi
+            
+            # Check if within the monitor window
+            if [ $DIFF_MIN -lt -10 ] || [ $DIFF_MIN -gt 10 ]; then
+                echo "$(date): $MSG_MONITOR_WINDOW_INACTIVE" >> $LOG_FILE
+                sleep $CHECK_INTERVAL
+                continue
+            else
+                echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE" >> $LOG_FILE
+            fi
+        else
+            # Last login time unknown, monitor continuously
+            echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)" >> $LOG_FILE
         fi
     fi
 

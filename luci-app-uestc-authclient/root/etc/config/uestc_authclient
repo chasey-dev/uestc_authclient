@@ -11,6 +11,7 @@ config authclient 'authclient'
     option scheduled_disconnect_enabled '1'
     option scheduled_disconnect_start '3'
     option scheduled_disconnect_end '4'
+    option limited_monitoring '1'
 
     # CT client settings
     option ct_client_username ''
@@ -22,4 +23,3 @@ config authclient 'authclient'
     option srun_client_password ''
     option srun_client_auth_mode 'dx'  # Authentication mode, e.g., 'dx', 'edu', etc.
     option srun_client_host '10.253.0.237'  # Authentication server IP
-    # Other srun_client specific settings...
