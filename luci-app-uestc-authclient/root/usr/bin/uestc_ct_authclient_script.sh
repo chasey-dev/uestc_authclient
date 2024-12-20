@@ -37,6 +37,7 @@ HOST=$(uci get uestc_authclient.@authclient[0].ct_client_host 2>/dev/null)
 [ -z "$HOST" ] && HOST="172.25.249.64"
 
 LOG_FILE="/tmp/uestc_authclient.log"
+LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
 
 # Release DHCP
 printf "$(date): $MSG_RELEASE_DHCP\n" "$INTERFACE" >> $LOG_FILE
@@ -76,7 +77,7 @@ echo "$LOGIN_OUTPUT" >> $LOG_FILE
 # Check if login was successful
 if echo "$LOGIN_OUTPUT" | grep -q "Successfully"; then
     # Login successful, record login time
-    date "+%Y-%m-%d %H:%M:%S" > /tmp/uestc_authclient_last_login
+    date "+%Y-%m-%d %H:%M:%S" > $LAST_LOGIN_FILE
     echo "$(date): $MSG_LOGIN_SUCCESS" >> $LOG_FILE
 else
     echo "$(date): $MSG_LOGIN_FAILURE" >> $LOG_FILE

@@ -59,6 +59,7 @@ LIMITED_MONITORING=$(uci get uestc_authclient.@authclient[0].limited_monitoring 
 [ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
 
 LOG_FILE="/tmp/uestc_authclient.log"
+LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
 
 echo "$(date): $MSG_MONITOR_SCRIPT_STARTED" >> $LOG_FILE
 
@@ -91,7 +92,7 @@ disconnect_done=0  # Indicates if disconnection has been performed
 
 if [ "$LIMITED_MONITORING" -eq 1 ]; then
     echo "$(date): $MSG_LIMITED_MONITORING_ENABLED" >> $LOG_FILE
-    LAST_LOGIN=$(cat /tmp/uestc_authclient_last_login 2>/dev/null)
+    LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
     if [ -z "$LAST_LOGIN" ]; then
         echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)" >> $LOG_FILE
     fi
@@ -152,6 +153,8 @@ while true; do
                 # Enable network interface using ifconfig
                 ifconfig $INTERFACE up
                 disconnect_done=0
+                # Remove last login file to de-function limited monitoring
+                rm $LAST_LOGIN_FILE
                 # Wait for network to recover
                 sleep 30
             fi
@@ -160,7 +163,7 @@ while true; do
 
     # Limited monitoring feature
     if [ "$LIMITED_MONITORING" -eq 1 ]; then
-        LAST_LOGIN=$(cat /tmp/uestc_authclient_last_login 2>/dev/null)
+        LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
         # Convert last login time to seconds since epoch
         if [ -n "$LAST_LOGIN" ]; then
 

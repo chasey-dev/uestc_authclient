@@ -93,7 +93,7 @@ echo "$LOGIN_OUTPUT" >> $LOG_FILE
 # Check if login was successful
 if echo "$LOGIN_OUTPUT" | grep -q "success"; then
     # Login successful, record login time
-    date "+%Y-%m-%d %H:%M:%S" > /tmp/uestc_authclient_last_login
+    date "+%Y-%m-%d %H:%M:%S" > $LAST_LOGIN_FILE
     echo "$(date): $MSG_LOGIN_SUCCESS" >> $LOG_FILE
 else
     echo "$(date): $MSG_LOGIN_FAILURE" >> $LOG_FILE
