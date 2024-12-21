@@ -41,6 +41,7 @@ HOST=$(uci get uestc_authclient.@authclient[0].srun_client_host 2>/dev/null)
 [ -z "$HOST" ] && HOST="10.253.0.237"
 
 LOG_FILE="/tmp/uestc_authclient.log"
+LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
 
 # Check if username and password are set
 if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
