@@ -1,114 +1,126 @@
 #!/bin/sh
 
-# Get the system language
-LANG=$(uci get luci.main.lang 2>/dev/null)
-[ -z "$LANG" ] && LANG="en"
+# Main script for monitoring network connectivity and handling authentication
 
-# Define messages based on the language
-if [ "$LANG" = "zh_cn" ]; then
-    MSG_MONITOR_STARTED="监控脚本已启动。"
-    MSG_UNKNOWN_CLIENT_TYPE="未知的客户端类型："
-    MSG_NETWORK_REACHABLE="网络已恢复正常。"
-    MSG_NETWORK_UNREACHABLE="网络连通性检查失败 (%s/%s)"
-    MSG_TRY_RELOGIN="连续 %s 次网络不可达，尝试重新登录..."
-    MSG_INTERFACE_NO_IP="接口 %s 没有获取到IP地址，等待下一次检查。"
-    MSG_DISCONNECT_TIME="达到计划断网时间，断开网络连接。"
-    MSG_RECONNECT_TIME="计划断网时间结束，恢复网络连接。"
-    MSG_MONITOR_SCRIPT_STARTED="监控脚本已启动。"
-    MSG_SERVICE_DISABLED="服务在配置中被禁用，不启动服务。"
-    MSG_LIMITED_MONITORING_ENABLED="限时监控已启用。"
-    MSG_LIMITED_MONITORING_DISABLED="限时监控已禁用。"
-    MSG_MONITOR_WINDOW_ACTIVE="在监控时间窗口内，进行网络监控和重连。"
-    MSG_MONITOR_WINDOW_INACTIVE="不在监控时间窗口内，暂停网络监控和重连。"
-else
-    MSG_MONITOR_STARTED="Monitor script started."
-    MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
-    MSG_NETWORK_REACHABLE="Network has recovered."
-    MSG_NETWORK_UNREACHABLE="Network connectivity check failed (%s/%s)"
-    MSG_TRY_RELOGIN="Network unreachable for %s times, attempting to re-login..."
-    MSG_INTERFACE_NO_IP="Interface %s has no IP address, waiting for the next check."
-    MSG_DISCONNECT_TIME="Reached scheduled disconnect time, disconnecting network."
-    MSG_RECONNECT_TIME="Scheduled disconnect time ended, restoring network connection."
-    MSG_MONITOR_SCRIPT_STARTED="Monitor script started."
-    MSG_SERVICE_DISABLED="Service is disabled in the configuration, not starting."
-    MSG_LIMITED_MONITORING_ENABLED="Limited monitoring enabled."
-    MSG_LIMITED_MONITORING_DISABLED="Limited monitoring disabled."
-    MSG_MONITOR_WINDOW_ACTIVE="Within monitoring time window, performing network monitoring and reconnection."
-    MSG_MONITOR_WINDOW_INACTIVE="Outside monitoring time window, pausing network monitoring and reconnection."
-fi
+#######################################
+# Load configuration and initialize variables
+#######################################
+init_config() {
+    # Get the system language
+    LANG=$(uci get luci.main.lang 2>/dev/null)
+    [ -z "$LANG" ] && LANG="en"
 
-# Get configuration
-CLIENT_TYPE=$(uci get uestc_authclient.@authclient[0].client_type 2>/dev/null)
-[ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"  # Default to ct client
+    # Load messages based on language
+    load_messages
 
-CHECK_INTERVAL=$(uci get uestc_authclient.@authclient[0].check_interval 2>/dev/null)
-[ -z "$CHECK_INTERVAL" ] && CHECK_INTERVAL=30  # Default check interval is 30 seconds
+    # Get client configuration
+    CLIENT_TYPE=$(uci get uestc_authclient.@authclient[0].client_type 2>/dev/null)
+    [ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"  # Default to ct client
 
-# Get heartbeat hosts list
-HEARTBEAT_HOSTS=$(uci -q get uestc_authclient.@authclient[0].heartbeat_hosts)
-[ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
+    CHECK_INTERVAL=$(uci get uestc_authclient.@authclient[0].check_interval 2>/dev/null)
+    [ -z "$CHECK_INTERVAL" ] && CHECK_INTERVAL=30  # Default check interval is 30 seconds
 
-INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
-[ -z "$INTERFACE" ] && INTERFACE="wan"
+    # Get heartbeat hosts list
+    HEARTBEAT_HOSTS=$(uci -q get uestc_authclient.@authclient[0].heartbeat_hosts)
+    [ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
 
-LOG_RETENTION_DAYS=$(uci get uestc_authclient.@authclient[0].log_retention_days 2>/dev/null)
-[ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
+    INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
+    [ -z "$INTERFACE" ] && INTERFACE="wan"
 
-# Limited monitoring
-LIMITED_MONITORING=$(uci get uestc_authclient.@authclient[0].limited_monitoring 2>/dev/null)
-[ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
+    LOG_RETENTION_DAYS=$(uci get uestc_authclient.@authclient[0].log_retention_days 2>/dev/null)
+    [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
 
-LOG_FILE="/tmp/uestc_authclient.log"
-LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
+    # Limited monitoring
+    LIMITED_MONITORING=$(uci get uestc_authclient.@authclient[0].limited_monitoring 2>/dev/null)
+    [ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
 
-echo "$(date): $MSG_MONITOR_SCRIPT_STARTED" >> $LOG_FILE
+    # Scheduled disconnect configuration
+    scheduled_disconnect_enabled=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_enabled 2>/dev/null)
+    [ -z "$scheduled_disconnect_enabled" ] && scheduled_disconnect_enabled=0
 
-# Select authentication script based on client type
-if [ "$CLIENT_TYPE" = "ct" ]; then
-    AUTH_SCRIPT="/usr/bin/uestc_ct_authclient_script.sh"
-elif [ "$CLIENT_TYPE" = "srun" ]; then
-    AUTH_SCRIPT="/usr/bin/uestc_srun_authclient_script.sh"
-else
-    echo "$(date): $MSG_UNKNOWN_CLIENT_TYPE $CLIENT_TYPE" >> $LOG_FILE
-    exit 1
-fi
+    scheduled_disconnect_start=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_start 2>/dev/null)
+    [ -z "$scheduled_disconnect_start" ] && scheduled_disconnect_start=3
 
-# Define maximum consecutive failures
-MAX_FAILURES=3  # Maximum failure count
-failure_count=0
-network_down=0  # Indicates if the network is down
-CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL  # Initialize network check interval
+    scheduled_disconnect_end=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_end 2>/dev/null)
+    [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
 
-scheduled_disconnect_enabled=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_enabled 2>/dev/null)
-[ -z "$scheduled_disconnect_enabled" ] && scheduled_disconnect_enabled=0
-
-scheduled_disconnect_start=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_start 2>/dev/null)
-[ -z "$scheduled_disconnect_start" ] && scheduled_disconnect_start=3
-
-scheduled_disconnect_end=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_end 2>/dev/null)
-[ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
-
-disconnect_done=0  # Indicates if disconnection has been performed
-
-if [ "$LIMITED_MONITORING" -eq 1 ]; then
-    echo "$(date): $MSG_LIMITED_MONITORING_ENABLED" >> $LOG_FILE
-    LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
-    if [ -z "$LAST_LOGIN" ]; then
-        echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)" >> $LOG_FILE
+    # Define files and variables
+    LOG_FILE="/tmp/uestc_authclient.log"
+    LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
+    
+    # Define maximum consecutive failures
+    MAX_FAILURES=3  # Maximum failure count
+    failure_count=0
+    network_down=0  # Indicates if the network is down
+    CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL  # Initialize network check interval
+    disconnect_done=0  # Indicates if disconnection has been performed
+    limited_monitoring_notice_flag=0  # Flag to prevent loop logging
+    
+    # Select authentication script based on client type
+    if [ "$CLIENT_TYPE" = "ct" ]; then
+        AUTH_SCRIPT="/usr/bin/uestc_ct_authclient_script.sh"
+    elif [ "$CLIENT_TYPE" = "srun" ]; then
+        AUTH_SCRIPT="/usr/bin/uestc_srun_authclient_script.sh"
+    else
+        echo "$(date): $MSG_UNKNOWN_CLIENT_TYPE $CLIENT_TYPE" >> $LOG_FILE
+        exit 1
     fi
-else
-    echo "$(date): $MSG_LIMITED_MONITORING_DISABLED" >> $LOG_FILE
-fi
 
-# Set flag to prevent from loop logging
-limited_monitoring_notice_flag=0
+    echo "$(date): $MSG_MONITOR_SCRIPT_STARTED" >> $LOG_FILE
 
-while true; do
-    CURRENT_TIME=$(date +%s)
-    CURRENT_HOUR=$(date +%H)
-    CURRENT_MIN=$(date +%M)
+    # Log limited monitoring status
+    if [ "$LIMITED_MONITORING" -eq 1 ]; then
+        echo "$(date): $MSG_LIMITED_MONITORING_ENABLED" >> $LOG_FILE
+        LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
+        if [ -z "$LAST_LOGIN" ]; then
+            echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)" >> $LOG_FILE
+        fi
+    else
+        echo "$(date): $MSG_LIMITED_MONITORING_DISABLED" >> $LOG_FILE
+    fi
+}
 
-    # Check and clean logs
+#######################################
+# Load messages based on the language
+#######################################
+load_messages() {
+    if [ "$LANG" = "zh_cn" ]; then
+        MSG_MONITOR_STARTED="监控脚本已启动。"
+        MSG_UNKNOWN_CLIENT_TYPE="未知的客户端类型："
+        MSG_NETWORK_REACHABLE="网络已恢复正常。"
+        MSG_NETWORK_UNREACHABLE="网络连通性检查失败 (%s/%s)"
+        MSG_TRY_RELOGIN="连续 %s 次网络不可达，尝试重新登录..."
+        MSG_INTERFACE_NO_IP="接口 %s 没有获取到IP地址，等待下一次检查。"
+        MSG_DISCONNECT_TIME="达到计划断网时间，断开网络连接。"
+        MSG_RECONNECT_TIME="计划断网时间结束，恢复网络连接。"
+        MSG_MONITOR_SCRIPT_STARTED="监控脚本已启动。"
+        MSG_SERVICE_DISABLED="服务在配置中被禁用，不启动服务。"
+        MSG_LIMITED_MONITORING_ENABLED="限时监控已启用。"
+        MSG_LIMITED_MONITORING_DISABLED="限时监控已禁用。"
+        MSG_MONITOR_WINDOW_ACTIVE="在监控时间窗口内，进行网络监控和重连。"
+        MSG_MONITOR_WINDOW_INACTIVE="不在监控时间窗口内，暂停网络监控和重连。"
+    else
+        MSG_MONITOR_STARTED="Monitor script started."
+        MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
+        MSG_NETWORK_REACHABLE="Network has recovered."
+        MSG_NETWORK_UNREACHABLE="Network connectivity check failed (%s/%s)"
+        MSG_TRY_RELOGIN="Network unreachable for %s times, attempting to re-login..."
+        MSG_INTERFACE_NO_IP="Interface %s has no IP address, waiting for the next check."
+        MSG_DISCONNECT_TIME="Reached scheduled disconnect time, disconnecting network."
+        MSG_RECONNECT_TIME="Scheduled disconnect time ended, restoring network connection."
+        MSG_MONITOR_SCRIPT_STARTED="Monitor script started."
+        MSG_SERVICE_DISABLED="Service is disabled in the configuration, not starting."
+        MSG_LIMITED_MONITORING_ENABLED="Limited monitoring enabled."
+        MSG_LIMITED_MONITORING_DISABLED="Limited monitoring disabled."
+        MSG_MONITOR_WINDOW_ACTIVE="Within monitoring time window, performing network monitoring and reconnection."
+        MSG_MONITOR_WINDOW_INACTIVE="Outside monitoring time window, pausing network monitoring and reconnection."
+    fi
+}
+
+#######################################
+# Clean logs older than retention period
+#######################################
+clean_logs() {
     if [ -f "$LOG_FILE" ]; then
         TEMP_LOG_FILE="${LOG_FILE}.tmp"
         > "$TEMP_LOG_FILE"  # Ensure temporary file exists
@@ -135,8 +147,12 @@ while true; do
             rm -f "$LOG_FILE" "$TEMP_LOG_FILE"
         fi
     fi
+}
 
-    # Scheduled disconnection feature
+#######################################
+# Handle scheduled disconnection
+#######################################
+handle_scheduled_disconnect() {
     if [ "$scheduled_disconnect_enabled" -eq 1 ]; then
         if [ "$CURRENT_HOUR" -ge "$scheduled_disconnect_start" ] && [ "$CURRENT_HOUR" -lt "$scheduled_disconnect_end" ]; then
             if [ "$disconnect_done" -eq 0 ]; then
@@ -145,8 +161,7 @@ while true; do
                 ifconfig $INTERFACE down
                 disconnect_done=1
             fi
-            sleep $CHECK_INTERVAL
-            continue  # Do not perform other operations during disconnection
+            return 1  # Signal to skip other operations
         else
             if [ "$disconnect_done" -eq 1 ]; then
                 echo "$(date): $MSG_RECONNECT_TIME" >> $LOG_FILE
@@ -160,13 +175,17 @@ while true; do
             fi
         fi
     fi
+    return 0  # Signal to continue with other operations
+}
 
-    # Limited monitoring feature
+#######################################
+# Check if current time is within monitoring window
+#######################################
+check_limited_monitoring() {
     if [ "$LIMITED_MONITORING" -eq 1 ]; then
         LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
         # Convert last login time to seconds since epoch
         if [ -n "$LAST_LOGIN" ]; then
-
             # Extract time (hours and minutes) from last login time
             LOGIN_HOUR=$(date -d "$LAST_LOGIN" -D "%Y-%m-%d %H:%M:%S" +%H)
             LOGIN_MIN=$(date -d "$LAST_LOGIN" -D "%Y-%m-%d %H:%M:%S" +%M)
@@ -194,8 +213,7 @@ while true; do
                     echo "$(date): $MSG_MONITOR_WINDOW_INACTIVE" >> $LOG_FILE
                     limited_monitoring_notice_flag=1
                 fi
-                sleep $CHECK_INTERVAL
-                continue
+                return 1  # Signal to skip network check
             else
                 if [ "$limited_monitoring_notice_flag" -eq 1 ]; then
                     echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE" >> $LOG_FILE
@@ -204,15 +222,25 @@ while true; do
             fi
         fi
     fi
+    return 0  # Signal to continue with network check
+}
 
-    # Check if the interface has an IP address
+#######################################
+# Check if interface has IP address
+#######################################
+check_interface_ip() {
     INTERFACE_IP=$(ifstatus $INTERFACE | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null)
     if [ -z "$INTERFACE_IP" ]; then
         printf "$(date): $MSG_INTERFACE_NO_IP\n" "$INTERFACE" >> $LOG_FILE
-        sleep $CHECK_INTERVAL
-        continue
+        return 1  # Signal no IP address
     fi
+    return 0  # Signal IP address exists
+}
 
+#######################################
+# Check network connectivity and handle login if needed
+#######################################
+check_network_connectivity() {
     # Check network connectivity
     network_reachable=0
     for HOST in $HEARTBEAT_HOSTS; do
@@ -232,6 +260,8 @@ while true; do
             failure_count=0
         fi
         network_down=1
+        # Shorten check interval when network is down
+        CURRENT_CHECK_INTERVAL=$((CHECK_INTERVAL / 2))
     else
         # Network is up
         if [ "$failure_count" -ne 0 ] || [ "$network_down" -eq 1 ]; then
@@ -240,13 +270,55 @@ while true; do
         # Reset failure count
         failure_count=0
         network_down=0
+        # Use default check interval when network is up
+        CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL
     fi
+}
 
-    if [ "$failure_count" -ge 1 ]; then
-        CURRENT_CHECK_INTERVAL=$((CURRENT_CHECK_INTERVAL / 2))  # Shorten check interval when network is down
-    else
-        CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL  # Use default check interval when network is up
-    fi
+#######################################
+# Main function to execute the monitor loop
+#######################################
+main() {
+    # Initialize configuration
+    init_config
 
-    sleep $CURRENT_CHECK_INTERVAL
-done
+    # Main monitoring loop
+    while true; do
+        CURRENT_TIME=$(date +%s)
+        CURRENT_HOUR=$(date +%H)
+        CURRENT_MIN=$(date +%M)
+
+        # Clean logs
+        clean_logs
+
+        # Handle scheduled disconnection
+        handle_scheduled_disconnect
+        if [ $? -eq 1 ]; then
+            sleep $CHECK_INTERVAL
+            continue
+        fi
+
+        # Check if we should run monitoring based on time window
+        check_limited_monitoring
+        if [ $? -eq 1 ]; then
+            sleep $CHECK_INTERVAL
+            continue
+        fi
+
+        # Check if interface has IP
+        check_interface_ip
+        if [ $? -eq 1 ]; then
+            sleep $CHECK_INTERVAL
+            continue
+        fi
+
+        # Check network connectivity and handle reconnection
+        check_network_connectivity
+
+        # Sleep until next check
+        sleep $CURRENT_CHECK_INTERVAL
+    done
+}
+
+# Start the main function
+main
