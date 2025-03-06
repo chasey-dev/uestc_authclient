@@ -4,7 +4,9 @@ START=99
 STOP=10
 
 USE_PROCD=1
-LOG_FILE="/tmp/uestc_authclient.log"
+
+# Source the shared logging utility functions
+. /usr/lib/uestc_authclient/log_utils.sh
 
 # Get the system language
 LANG=$(uci get luci.main.lang 2>/dev/null)
@@ -25,12 +27,15 @@ else
     MSG_SERVICE_STOPPED="Service stopped."
 fi
 
+# Initialize logging
+log_init "/tmp/uestc_authclient.log"
+
 boot() {
     enabled=$(uci get uestc_authclient.@authclient[0].enabled 2>/dev/null)
     if [ "$enabled" = "1" ]; then
         start
     else
-        echo "$(date): $MSG_DISABLED" >> $LOG_FILE
+        log_message "$MSG_DISABLED"
     fi
 }
 
@@ -49,16 +54,16 @@ start_service() {
         USERNAME=$(uci get uestc_authclient.@authclient[0].srun_client_username 2>/dev/null)
         PASSWORD=$(uci get uestc_authclient.@authclient[0].srun_client_password 2>/dev/null)
     else
-        echo "$(date): $MSG_UNKNOWN_CLIENT_TYPE $CLIENT_TYPE" >> $LOG_FILE
+        log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$CLIENT_TYPE"
         return 1
     fi
 
     if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
-        echo "$(date): $MSG_USERNAME_PASSWORD_NOT_SET" >> $LOG_FILE
+        log_message "$MSG_USERNAME_PASSWORD_NOT_SET"
         return 1
     fi
 
-    echo "$(date): $MSG_SERVICE_STARTED" >> $LOG_FILE
+    log_message "$MSG_SERVICE_STARTED"
 
     procd_open_instance
     procd_set_param command $PROG
@@ -68,6 +73,6 @@ start_service() {
 }
 
 stop_service() {
-    echo "$(date): $MSG_SERVICE_STOPPED" >> $LOG_FILE
+    log_message "$MSG_SERVICE_STOPPED"
     # procd will automatically handle stopping the process
 }

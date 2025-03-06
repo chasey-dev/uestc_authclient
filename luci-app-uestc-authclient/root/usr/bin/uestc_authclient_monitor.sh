@@ -2,6 +2,9 @@
 
 # Main script for monitoring network connectivity and handling authentication
 
+# Source the shared logging utility functions
+. /usr/lib/uestc_authclient/log_utils.sh
+
 #######################################
 # Load configuration and initialize variables
 #######################################
@@ -30,6 +33,9 @@ init_config() {
     LOG_RETENTION_DAYS=$(uci get uestc_authclient.@authclient[0].log_retention_days 2>/dev/null)
     [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
 
+    # Initialize logging with the correct log file
+    log_init "/tmp/uestc_authclient.log"
+
     # Limited monitoring
     LIMITED_MONITORING=$(uci get uestc_authclient.@authclient[0].limited_monitoring 2>/dev/null)
     [ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
@@ -45,7 +51,6 @@ init_config() {
     [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
 
     # Define files and variables
-    LOG_FILE="/tmp/uestc_authclient.log"
     LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
     
     # Define maximum consecutive failures
@@ -62,21 +67,21 @@ init_config() {
     elif [ "$CLIENT_TYPE" = "srun" ]; then
         AUTH_SCRIPT="/usr/bin/uestc_srun_authclient_script.sh"
     else
-        echo "$(date): $MSG_UNKNOWN_CLIENT_TYPE $CLIENT_TYPE" >> $LOG_FILE
+        log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$CLIENT_TYPE"
         exit 1
     fi
 
-    echo "$(date): $MSG_MONITOR_SCRIPT_STARTED" >> $LOG_FILE
+    log_message "$MSG_MONITOR_SCRIPT_STARTED"
 
     # Log limited monitoring status
     if [ "$LIMITED_MONITORING" -eq 1 ]; then
-        echo "$(date): $MSG_LIMITED_MONITORING_ENABLED" >> $LOG_FILE
+        log_message "$MSG_LIMITED_MONITORING_ENABLED"
         LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
         if [ -z "$LAST_LOGIN" ]; then
-            echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)" >> $LOG_FILE
+            log_message "$MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)"
         fi
     else
-        echo "$(date): $MSG_LIMITED_MONITORING_DISABLED" >> $LOG_FILE
+        log_message "$MSG_LIMITED_MONITORING_DISABLED"
     fi
 }
 
@@ -121,32 +126,9 @@ load_messages() {
 # Clean logs older than retention period
 #######################################
 clean_logs() {
-    if [ -f "$LOG_FILE" ]; then
-        TEMP_LOG_FILE="${LOG_FILE}.tmp"
-        > "$TEMP_LOG_FILE"  # Ensure temporary file exists
-        while read -r line; do
-            # Extract the date and time from the log line
-            log_date=$(echo "$line" | awk '{print $1" "$2" "$3}')
-            log_timestamp=$(date -d "$log_date" +%s 2>/dev/null)
-            if [ -z "$log_timestamp" ]; then
-                # Unable to parse date and time, keep the line
-                echo "$line" >> "$TEMP_LOG_FILE"
-                continue
-            fi
-            # Calculate date difference
-            diff_days=$(( (CURRENT_TIME - log_timestamp) / 86400 ))
-            if [ $diff_days -lt $LOG_RETENTION_DAYS ]; then
-                # Keep logs within retention period
-                echo "$line" >> "$TEMP_LOG_FILE"
-            fi
-        done < "$LOG_FILE"
-        # Check if temporary file exists and is not empty
-        if [ -s "$TEMP_LOG_FILE" ]; then
-            mv "$TEMP_LOG_FILE" "$LOG_FILE"
-        else
-            rm -f "$LOG_FILE" "$TEMP_LOG_FILE"
-        fi
-    fi
+    # Call the shared log_clean function with our retention period
+    # Clean logs daily (24 hours interval)
+    log_clean "$LOG_RETENTION_DAYS" 24
 }
 
 #######################################
@@ -156,7 +138,7 @@ handle_scheduled_disconnect() {
     if [ "$scheduled_disconnect_enabled" -eq 1 ]; then
         if [ "$CURRENT_HOUR" -ge "$scheduled_disconnect_start" ] && [ "$CURRENT_HOUR" -lt "$scheduled_disconnect_end" ]; then
             if [ "$disconnect_done" -eq 0 ]; then
-                echo "$(date): $MSG_DISCONNECT_TIME" >> $LOG_FILE
+                log_message "$MSG_DISCONNECT_TIME"
                 # Disable network interface using ifconfig
                 ifconfig $INTERFACE down
                 disconnect_done=1
@@ -164,7 +146,7 @@ handle_scheduled_disconnect() {
             return 1  # Signal to skip other operations
         else
             if [ "$disconnect_done" -eq 1 ]; then
-                echo "$(date): $MSG_RECONNECT_TIME" >> $LOG_FILE
+                log_message "$MSG_RECONNECT_TIME"
                 # Enable network interface using ifconfig
                 ifconfig $INTERFACE up
                 disconnect_done=0
@@ -210,13 +192,13 @@ check_limited_monitoring() {
             # Check if within the monitor window
             if [ $DIFF_MIN -lt -10 ] || [ $DIFF_MIN -gt 10 ]; then
                 if [ "$limited_monitoring_notice_flag" -ne 1 ]; then
-                    echo "$(date): $MSG_MONITOR_WINDOW_INACTIVE" >> $LOG_FILE
+                    log_message "$MSG_MONITOR_WINDOW_INACTIVE"
                     limited_monitoring_notice_flag=1
                 fi
                 return 1  # Signal to skip network check
             else
                 if [ "$limited_monitoring_notice_flag" -eq 1 ]; then
-                    echo "$(date): $MSG_MONITOR_WINDOW_ACTIVE" >> $LOG_FILE
+                    log_message "$MSG_MONITOR_WINDOW_ACTIVE"
                     limited_monitoring_notice_flag=0
                 fi
             fi
@@ -231,7 +213,7 @@ check_limited_monitoring() {
 check_interface_ip() {
     INTERFACE_IP=$(ifstatus $INTERFACE | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null)
     if [ -z "$INTERFACE_IP" ]; then
-        printf "$(date): $MSG_INTERFACE_NO_IP\n" "$INTERFACE" >> $LOG_FILE
+        log_printf "$MSG_INTERFACE_NO_IP" "$INTERFACE"
         return 1  # Signal no IP address
     fi
     return 0  # Signal IP address exists
@@ -253,10 +235,10 @@ check_network_connectivity() {
 
     if [ "$network_reachable" -eq 0 ]; then
         failure_count=$((failure_count + 1))
-        printf "$(date): $MSG_NETWORK_UNREACHABLE\n" "$failure_count" "$MAX_FAILURES" >> $LOG_FILE
+        log_printf "$MSG_NETWORK_UNREACHABLE" "$failure_count" "$MAX_FAILURES"
         if [ "$failure_count" -ge "$MAX_FAILURES" ]; then
-            printf "$(date): $MSG_TRY_RELOGIN\n" "$MAX_FAILURES" >> $LOG_FILE
-            $AUTH_SCRIPT >> $LOG_FILE 2>&1
+            log_printf "$MSG_TRY_RELOGIN" "$MAX_FAILURES"
+            $AUTH_SCRIPT
             failure_count=0
         fi
         network_down=1
@@ -265,7 +247,7 @@ check_network_connectivity() {
     else
         # Network is up
         if [ "$failure_count" -ne 0 ] || [ "$network_down" -eq 1 ]; then
-            echo "$(date): $MSG_NETWORK_REACHABLE" >> $LOG_FILE
+            log_message "$MSG_NETWORK_REACHABLE"
         fi
         # Reset failure count
         failure_count=0
@@ -288,7 +270,7 @@ main() {
         CURRENT_HOUR=$(date +%H)
         CURRENT_MIN=$(date +%M)
 
-        # Clean logs
+        # Clean logs (only runs at configured intervals)
         clean_logs
 
         # Handle scheduled disconnection
