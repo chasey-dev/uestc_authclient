@@ -35,6 +35,9 @@ msgstr "设置"
 msgid "Basic Settings"
 msgstr "基本设置"
 
+msgid "Authentication Settings"
+msgstr "认证设置"
+
 msgid "CT Authentication Settings"
 msgstr "电信认证设置"
 
@@ -52,6 +55,21 @@ msgstr "定时断网设置"
 
 msgid "Configuration has been saved and the service has been restarted!"
 msgstr "配置已保存，服务已重启！"
+
+msgid "Last updated:"
+msgstr "最后更新时间："
+
+msgid "Updating..."
+msgstr "正在更新..."
+
+msgid "Updating logs..."
+msgstr "正在更新日志..."
+
+msgid "Starting..."
+msgstr "正在启动..."
+
+msgid "Stopping..."
+msgstr "正在停止..."
 
 msgid "Enable on startup"
 msgstr "开机自动运行"
@@ -226,3 +244,15 @@ msgstr "日志"
 
 msgid "Clear Logs"
 msgstr "清除日志"
+
+msgid "Start service"
+msgstr "启动服务"
+
+msgid "Stop service"
+msgstr "停止服务"
+
+msgid "Service logs"
+msgstr "服务日志"
+
+msgid "Clear all logs"
+msgstr "清除所有日志"

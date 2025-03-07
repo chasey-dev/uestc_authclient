@@ -32,13 +32,16 @@ o:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
 o:value("srun", translate("Srun authentication method (go-nd-portal)"))
 o.rmempty = false
 
--- CT authentication section
-s = m:section(TypedSection, "authclient", translate("CT Authentication Settings"))
-s.anonymous = true
-s:depends("client_type", "ct")
+-- Authentication settings section
+auth_section = m:section(TypedSection, "authclient", translate("Authentication Settings"))
+auth_section.anonymous = true
 
--- Username
-o = s:option(Value, "ct_client_username", translate("CT authentication username"))
+-- CT Authentication settings
+ct_settings = auth_section:tab("ct_settings", translate("CT Authentication Settings"))
+ct_settings:depends("client_type", "ct")
+
+-- CT Username
+o = ct_settings:option(Value, "ct_client_username", translate("CT authentication username"))
 o.datatype = "string"
 o.description = translate("Your CT authentication username.")
 o.placeholder = translate("Required")
@@ -54,8 +57,8 @@ function o.validate(self, value, section)
     return value
 end
 
--- Password
-o = s:option(Value, "ct_client_password", translate("CT authentication password"))
+-- CT Password
+o = ct_settings:option(Value, "ct_client_password", translate("CT authentication password"))
 o.datatype = "string"
 o.password = true
 o.description = translate("Your CT authentication password.")
@@ -72,20 +75,19 @@ function o.validate(self, value, section)
     return value
 end
 
--- Host
-o = s:option(Value, "ct_client_host", translate("CT authentication host"))
+-- CT Host
+o = ct_settings:option(Value, "ct_client_host", translate("CT authentication host"))
 o.datatype = "host"
 o.default = "172.25.249.64"
 o.description = translate("CT authentication server address, usually no need to modify.")
 o.placeholder = "172.25.249.64"
 
--- Srun authentication section
-s = m:section(TypedSection, "authclient", translate("Srun Authentication Settings"))
-s.anonymous = true
-s:depends("client_type", "srun")
+-- Srun Authentication settings
+srun_settings = auth_section:tab("srun_settings", translate("Srun Authentication Settings"))
+srun_settings:depends("client_type", "srun")
 
--- Username
-o = s:option(Value, "srun_client_username", translate("Srun authentication username"))
+-- Srun Username
+o = srun_settings:option(Value, "srun_client_username", translate("Srun authentication username"))
 o.datatype = "string"
 o.description = translate("Your Srun authentication username.")
 o.placeholder = translate("Required")
@@ -101,8 +103,8 @@ function o.validate(self, value, section)
     return value
 end
 
--- Password
-o = s:option(Value, "srun_client_password", translate("Srun authentication password"))
+-- Srun Password
+o = srun_settings:option(Value, "srun_client_password", translate("Srun authentication password"))
 o.datatype = "string"
 o.password = true
 o.description = translate("Your Srun authentication password.")
@@ -120,14 +122,14 @@ function o.validate(self, value, section)
 end
 
 -- Authentication mode
-o = s:option(ListValue, "srun_client_auth_mode", translate("Srun authentication mode"))
+o = srun_settings:option(ListValue, "srun_client_auth_mode", translate("Srun authentication mode"))
 o.default = "dx"
 o:value("dx", translate("China Telecom"))
 o:value("edu", translate("Campus Network"))
 o.description = translate("Select the authentication mode for the Srun client.")
 
--- Host
-o = s:option(Value, "srun_client_host", translate("Srun authentication host"))
+-- Srun Host
+o = srun_settings:option(Value, "srun_client_host", translate("Srun authentication host"))
 o.datatype = "ipaddr"
 o.default = "10.253.0.237"
 o.description = translate("Srun authentication server address, modify according to your area.")
