@@ -8,7 +8,8 @@ m = Map("uestc_authclient", translate("UESTC Authentication Client"))
 -- Add description
 m.description = translate("This page is used to configure the UESTC authentication client. Please fill in your username and password, and adjust other settings as needed.")
 
-s = m:section(TypedSection, "authclient", translate("Settings"))
+-- Primary settings section
+s = m:section(TypedSection, "authclient", translate("Basic Settings"))
 s.anonymous = true
 
 -- Enable on startup
@@ -31,14 +32,17 @@ o:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
 o:value("srun", translate("Srun authentication method (go-nd-portal)"))
 o.rmempty = false
 
--- CT client settings
+-- CT authentication section
+s = m:section(TypedSection, "authclient", translate("CT Authentication Settings"))
+s.anonymous = true
+s:depends("client_type", "ct")
+
 -- Username
 o = s:option(Value, "ct_client_username", translate("CT authentication username"))
 o.datatype = "string"
 o.description = translate("Your CT authentication username.")
 o.placeholder = translate("Required")
 o.rmempty = true
-o:depends("client_type", "ct")
 
 function o.validate(self, value, section)
     local client_type = m:get(section, "client_type")
@@ -57,7 +61,6 @@ o.password = true
 o.description = translate("Your CT authentication password.")
 o.placeholder = translate("Required")
 o.rmempty = true
-o:depends("client_type", "ct")
 
 function o.validate(self, value, section)
     local client_type = m:get(section, "client_type")
@@ -75,16 +78,18 @@ o.datatype = "host"
 o.default = "172.25.249.64"
 o.description = translate("CT authentication server address, usually no need to modify.")
 o.placeholder = "172.25.249.64"
-o:depends("client_type", "ct")
 
--- Srun client settings
+-- Srun authentication section
+s = m:section(TypedSection, "authclient", translate("Srun Authentication Settings"))
+s.anonymous = true
+s:depends("client_type", "srun")
+
 -- Username
 o = s:option(Value, "srun_client_username", translate("Srun authentication username"))
 o.datatype = "string"
 o.description = translate("Your Srun authentication username.")
 o.placeholder = translate("Required")
 o.rmempty = true
-o:depends("client_type", "srun")
 
 function o.validate(self, value, section)
     local client_type = m:get(section, "client_type")
@@ -103,7 +108,6 @@ o.password = true
 o.description = translate("Your Srun authentication password.")
 o.placeholder = translate("Required")
 o.rmempty = true
-o:depends("client_type", "srun")
 
 function o.validate(self, value, section)
     local client_type = m:get(section, "client_type")
@@ -121,7 +125,6 @@ o.default = "dx"
 o:value("dx", translate("China Telecom"))
 o:value("edu", translate("Campus Network"))
 o.description = translate("Select the authentication mode for the Srun client.")
-o:depends("client_type", "srun")
 
 -- Host
 o = s:option(Value, "srun_client_host", translate("Srun authentication host"))
@@ -129,9 +132,11 @@ o.datatype = "ipaddr"
 o.default = "10.253.0.237"
 o.description = translate("Srun authentication server address, modify according to your area.")
 o.placeholder = "10.253.0.237"
-o:depends("client_type", "srun")
 
--- General settings
+-- Network settings section
+s = m:section(TypedSection, "authclient", translate("Network Settings"))
+s.anonymous = true
+
 -- Network interface
 o = s:option(ListValue, "interface", translate("Network interface"))
 o.default = "wan"
@@ -160,12 +165,20 @@ o.default = "30"
 o.description = translate("Time interval for checking network status, in seconds.")
 o.placeholder = "30"
 
+-- Advanced settings section
+s = m:section(TypedSection, "authclient", translate("Advanced Settings"))
+s.anonymous = true
+
 -- Log retention days
 o = s:option(Value, "log_retention_days", translate("Log retention days"))
 o.datatype = "uinteger"
 o.default = "7"
 o.description = translate("Specify the number of days to retain log files; logs exceeding this period will be cleared.")
 o.placeholder = "7"
+
+-- Scheduled disconnection section
+s = m:section(TypedSection, "authclient", translate("Scheduled Disconnection"))
+s.anonymous = true
 
 -- Scheduled disconnection feature
 o = s:option(Flag, "scheduled_disconnect_enabled", translate("Enable scheduled disconnection"))
@@ -204,6 +217,8 @@ end
 
 -- Add on_commit function to restart the service after applying configuration
 function m.on_commit(self)
+    -- Add notification for user
+    luci.http.redirect(luci.dispatcher.build_url("admin/services/uestc_authclient") .. "?success=1")
     sys.call("/etc/init.d/uestc_authclient restart >/dev/null 2>&1 &")
 end
 

@@ -32,6 +32,27 @@ msgstr ""
 msgid "Settings"
 msgstr "设置"
 
+msgid "Basic Settings"
+msgstr "基本设置"
+
+msgid "CT Authentication Settings"
+msgstr "电信认证设置"
+
+msgid "Srun Authentication Settings"
+msgstr "Srun认证设置"
+
+msgid "Network Settings"
+msgstr "网络设置"
+
+msgid "Advanced Settings"
+msgstr "高级设置"
+
+msgid "Scheduled Disconnection"
+msgstr "定时断网设置"
+
+msgid "Configuration has been saved and the service has been restarted!"
+msgstr "配置已保存，服务已重启！"
+
 msgid "Enable on startup"
 msgstr "开机自动运行"
 

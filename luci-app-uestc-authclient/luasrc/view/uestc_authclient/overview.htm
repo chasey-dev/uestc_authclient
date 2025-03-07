@@ -40,7 +40,79 @@ end
 
 local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate("None")
 
+-- Check for success message from config page
+local success_msg = nil
+if http.formvalue("success") == "1" then
+    success_msg = translate("Configuration has been saved and the service has been restarted!")
+end
+
 %>
+
+<style>
+.status-card {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.status-card h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #e6e6e6;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.status-label {
+    font-weight: bold;
+}
+.status-value {
+    text-align: right;
+}
+.control-buttons {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.control-buttons button {
+    min-width: 120px;
+}
+.log-container {
+    margin-top: 20px;
+}
+.log-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+.alert-message {
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+.alert-success {
+    background-color: #dff0d8;
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+}
+@media (max-width: 768px) {
+    .status-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .status-value {
+        text-align: left;
+        margin-top: 5px;
+    }
+}
+</style>
 
 <h2><%:UESTC Authentication%></h2>
 
@@ -48,17 +120,19 @@ local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate(
     <%:This page displays the current status of the UESTC authentication client and provides control functions.%>
 </div>
 
+<% if success_msg then %>
+<div class="alert-message alert-success">
+    <%= success_msg %>
+</div>
+<% end %>
+
 <!-- Status section -->
-<fieldset class="cbi-section">
-    <legend><%:Status%></legend>
-    <table class="cbi-section-table">
-        <colgroup>
-            <col width="50%" />
-            <col width="50%" />
-        </colgroup>
-        <tr class="cbi-section-table-row">
-            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:Network Status%></strong></td>
-            <td class="cbi-section-table-cell" style="text-align: left;">
+<div class="status-card">
+    <h3><%:Status%></h3>
+    <div id="status_container">
+        <div class="status-item">
+            <div class="status-label"><%:Network Status%></div>
+            <div class="status-value" id="network_status">
                 <% if network_status == translate("Connected") then %>
                     <span style="color: green;"><strong><%=network_status%></strong></span>
                 <% elseif network_status == translate("Disconnected") then %>
@@ -66,54 +140,49 @@ local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate(
                 <% else %>
                     <span><strong><%=network_status%></strong></span>
                 <% end %>
-            </td>
-        </tr>
-        <tr class="cbi-section-table-row">
-            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:Last Login Time%></strong></td>
-            <td class="cbi-section-table-cell" style="text-align: left;"><%=last_login%></td>
-        </tr>
-        <tr class="cbi-section-table-row">
-            <td class="cbi-section-table-cell" style="text-align: left;"><strong><%:Service Status%></strong></td>
-            <td class="cbi-section-table-cell" style="text-align: left;">
+            </div>
+        </div>
+        <div class="status-item">
+            <div class="status-label"><%:Last Login Time%></div>
+            <div class="status-value" id="last_login"><%=last_login%></div>
+        </div>
+        <div class="status-item">
+            <div class="status-label"><%:Service Status%></div>
+            <div class="status-value" id="service_status">
                 <% if is_running then %>
                     <span style="color: green;"><strong><%:Running%></strong></span>
                 <% else %>
                     <span style="color: red;"><strong><%:Not running%></strong></span>
                 <% end %>
-            </td>
-        </tr>
-    </table>
-</fieldset>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Control section -->
-<fieldset class="cbi-section">
-    <legend><%:Control%></legend>
+<div class="status-card">
+    <h3><%:Control%></h3>
     <form method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
-        <table class="cbi-section-table">
-            <tr class="cbi-section-table-row">
-                <td class="cbi-section-table-cell" style="text-align: center;">
-                    <button type="submit" name="action" value="start" class="cbi-button cbi-input-apply" <% if is_running then %>disabled<% end %>><%:Start%></button>
-                </td>
-                <td class="cbi-section-table-cell" style="text-align: center;">
-                    <button type="submit" name="action" value="stop" class="cbi-button cbi-input-reset" <% if not is_running then %>disabled<% end %>><%:Stop%></button>
-                </td>
-            </tr>
-        </table>
+        <div class="control-buttons">
+            <button type="submit" name="action" value="start" class="cbi-button cbi-button-success" id="btn_start" <% if is_running then %>disabled<% end %>><%:Start%></button>
+            <button type="submit" name="action" value="stop" class="cbi-button cbi-button-danger" id="btn_stop" <% if not is_running then %>disabled<% end %>><%:Stop%></button>
+        </div>
     </form>
-</fieldset>
+</div>
 
 <!-- Log display section -->
-<fieldset class="cbi-section">
-    <legend><%:Logs%></legend>
+<div class="status-card">
+    <h3><%:Logs%></h3>
     <form method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
-        <textarea id="log_content" readonly="readonly" wrap="off" class="cbi-input-textarea" style="width:100%; height:300px;"></textarea>
-        <div style="text-align: right;">
+        <textarea id="log_content" readonly="readonly" wrap="off" class="cbi-input-textarea" style="width:100%; height:300px; font-family: monospace; font-size: 12px;"></textarea>
+        <div class="log-actions">
             <button type="submit" name="action" value="clear_log" class="cbi-button cbi-button-negative"><%:Clear Logs%></button>
         </div>
     </form>
-</fieldset>
+</div>
 
 <script type="text/javascript">
+    // Function to refresh logs
     function refreshLog() {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/get_log")%>?_t=' + new Date().getTime(), true);
@@ -131,10 +200,64 @@ local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate(
         };
         xhr.send(null);
     }
-    // Initial log fetch
+
+    // Function to update status
+    function updateStatus() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/status")%>?_t=' + new Date().getTime(), true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == XMLHttpRequest.DONE) {
+                if (xhr.status == 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        
+                        // Update network status
+                        var networkStatusEl = document.getElementById('network_status');
+                        if (response.network_status === "connected") {
+                            networkStatusEl.innerHTML = '<span style="color: green;"><strong><%:Connected%></strong></span>';
+                        } else if (response.network_status === "disconnected") {
+                            networkStatusEl.innerHTML = '<span style="color: red;"><strong><%:Disconnected%></strong></span>';
+                        } else {
+                            networkStatusEl.innerHTML = '<span><strong><%:Not running%></strong></span>';
+                        }
+                        
+                        // Update service status
+                        var serviceStatusEl = document.getElementById('service_status');
+                        if (response.running) {
+                            serviceStatusEl.innerHTML = '<span style="color: green;"><strong><%:Running%></strong></span>';
+                            document.getElementById('btn_start').disabled = true;
+                            document.getElementById('btn_stop').disabled = false;
+                        } else {
+                            serviceStatusEl.innerHTML = '<span style="color: red;"><strong><%:Not running%></strong></span>';
+                            document.getElementById('btn_start').disabled = false;
+                            document.getElementById('btn_stop').disabled = true;
+                        }
+                        
+                        // Update last login
+                        document.getElementById('last_login').textContent = response.last_login;
+                    } catch (e) {
+                        console.error('Error parsing status:', e);
+                    }
+                }
+            }
+        };
+        xhr.send(null);
+    }
+
+    // Initial load
     refreshLog();
-    // Refresh log every 2 seconds
+    
+    // Auto refresh status and logs
     setInterval(refreshLog, 2000);
+    setInterval(updateStatus, 5000);
+    
+    // Auto hide success message after 5 seconds
+    var successAlert = document.querySelector('.alert-success');
+    if (successAlert) {
+        setTimeout(function() {
+            successAlert.style.display = 'none';
+        }, 5000);
+    }
 </script>
 
 <%+footer%>
