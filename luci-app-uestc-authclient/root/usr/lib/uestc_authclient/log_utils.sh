@@ -2,6 +2,11 @@
 
 # Shared logging utility functions for UESTC Authentication Client
 
+# Source the internationalization support if not already sourced
+if [ -z "$MSG_SERVICE_STARTED" ]; then
+    . /usr/lib/uestc_authclient/i18n.sh
+fi
+
 # Default log file path
 LOG_FILE="/tmp/uestc_authclient.log"
 # Last log cleanup timestamp file
@@ -26,7 +31,7 @@ log_init() {
     # Create log file if it doesn't exist
     if [ ! -f "$LOG_FILE" ]; then
         touch "$LOG_FILE"
-        echo "$(date): Logging initialized. Log file created at $LOG_FILE" >> "$LOG_FILE"
+        echo "$(date): $MSG_LOG_INITIALIZED $LOG_FILE" >> "$LOG_FILE"
     fi
 }
 
@@ -147,13 +152,13 @@ log_clean() {
     
     # Check if temporary file exists and has content
     if [ -s "$temp_log_file" ]; then
-        # Add a log rotation message
-        echo "$(date): Log rotation completed. Retained $retained_lines/$total_lines lines (retention: $log_retention_days days)" >> "$temp_log_file"
+        # Add a log rotation message using the localized message
+        echo "$(date): $(printf "$MSG_LOG_ROTATION_COMPLETED" "$retained_lines" "$total_lines" "$log_retention_days")" >> "$temp_log_file"
         # Replace the old log with the new one
         mv "$temp_log_file" "$LOG_FILE"
     else
         # Create empty log with header if no lines were retained
-        echo "$(date): Log file cleared (retention: $log_retention_days days)" > "$LOG_FILE"
+        echo "$(date): $(printf "$MSG_LOG_FILE_CLEARED" "$log_retention_days")" > "$LOG_FILE"
         rm -f "$temp_log_file"
     fi
     

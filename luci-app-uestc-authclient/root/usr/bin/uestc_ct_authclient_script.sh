@@ -3,30 +3,8 @@
 # Source the shared logging utility functions
 . /usr/lib/uestc_authclient/log_utils.sh
 
-# Get the system language
-LANG=$(uci get luci.main.lang 2>/dev/null)
-[ -z "$LANG" ] && LANG="en"
-
-# Define messages based on the language
-if [ "$LANG" = "zh_cn" ]; then
-    MSG_RELEASE_DHCP="释放接口 %s 的 DHCP..."
-    MSG_RENEW_IP="重新获取接口 %s 的 IP 地址..."
-    MSG_GOT_IP="接口 %s 已获取到 IP 地址：%s"
-    MSG_WAIT_IP_TIMEOUT="等待 %s 秒后，接口 %s 仍未获取到 IP 地址，放弃登录。"
-    MSG_EXECUTE_LOGIN="执行电信登录程序..."
-    MSG_LOGIN_SUCCESS="登录成功，更新上次登录时间。"
-    MSG_LOGIN_FAILURE="登录失败，未更新上次登录时间。"
-    MSG_LOGIN_OUTPUT="登录输出：%s"
-else
-    MSG_RELEASE_DHCP="Releasing DHCP on interface %s..."
-    MSG_RENEW_IP="Renewing IP address on interface %s..."
-    MSG_GOT_IP="Interface %s obtained IP address: %s"
-    MSG_WAIT_IP_TIMEOUT="After waiting %s seconds, interface %s still has no IP address, aborting login."
-    MSG_EXECUTE_LOGIN="Executing CT login script..."
-    MSG_LOGIN_SUCCESS="Login successful, updated last login time."
-    MSG_LOGIN_FAILURE="Login failed, did not update last login time."
-    MSG_LOGIN_OUTPUT="Login output: %s"
-fi
+# Source the internationalization support
+. /usr/lib/uestc_authclient/i18n.sh
 
 # Initialize logging
 log_init "/tmp/uestc_authclient.log"
@@ -74,7 +52,7 @@ if [ -z "$INTERFACE_IP" ]; then
 fi
 
 # Execute login script and capture output
-log_message "$MSG_EXECUTE_LOGIN"
+log_message "$MSG_CT_EXECUTE_LOGIN"
 LOGIN_OUTPUT=$($CT_BIN \
     -name "$USERNAME" -passwd "$PASSWORD" -host "$HOST" -localip "$INTERFACE_IP" 2>&1)
 
@@ -89,7 +67,7 @@ done
 if echo "$LOGIN_OUTPUT" | grep -q "Successfully"; then
     # Login successful, record login time
     date "+%Y-%m-%d %H:%M:%S" > $LAST_LOGIN_FILE
-    log_message "$MSG_LOGIN_SUCCESS"
+    log_message "$MSG_CT_LOGIN_SUCCESS"
 else
-    log_message "$MSG_LOGIN_FAILURE"
+    log_message "$MSG_CT_LOGIN_FAILURE"
 fi

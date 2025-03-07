@@ -5,17 +5,13 @@
 # Source the shared logging utility functions
 . /usr/lib/uestc_authclient/log_utils.sh
 
+# Source the internationalization support
+. /usr/lib/uestc_authclient/i18n.sh
+
 #######################################
 # Load configuration and initialize variables
 #######################################
 init_config() {
-    # Get the system language
-    LANG=$(uci get luci.main.lang 2>/dev/null)
-    [ -z "$LANG" ] && LANG="en"
-
-    # Load messages based on language
-    load_messages
-
     # Get client configuration
     CLIENT_TYPE=$(uci get uestc_authclient.@authclient[0].client_type 2>/dev/null)
     [ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"  # Default to ct client
@@ -82,43 +78,6 @@ init_config() {
         fi
     else
         log_message "$MSG_LIMITED_MONITORING_DISABLED"
-    fi
-}
-
-#######################################
-# Load messages based on the language
-#######################################
-load_messages() {
-    if [ "$LANG" = "zh_cn" ]; then
-        MSG_MONITOR_STARTED="监控脚本已启动。"
-        MSG_UNKNOWN_CLIENT_TYPE="未知的客户端类型："
-        MSG_NETWORK_REACHABLE="网络已恢复正常。"
-        MSG_NETWORK_UNREACHABLE="网络连通性检查失败 (%s/%s)"
-        MSG_TRY_RELOGIN="连续 %s 次网络不可达，尝试重新登录..."
-        MSG_INTERFACE_NO_IP="接口 %s 没有获取到IP地址，等待下一次检查。"
-        MSG_DISCONNECT_TIME="达到计划断网时间，断开网络连接。"
-        MSG_RECONNECT_TIME="计划断网时间结束，恢复网络连接。"
-        MSG_MONITOR_SCRIPT_STARTED="监控脚本已启动。"
-        MSG_SERVICE_DISABLED="服务在配置中被禁用，不启动服务。"
-        MSG_LIMITED_MONITORING_ENABLED="限时监控已启用。"
-        MSG_LIMITED_MONITORING_DISABLED="限时监控已禁用。"
-        MSG_MONITOR_WINDOW_ACTIVE="在监控时间窗口内，进行网络监控和重连。"
-        MSG_MONITOR_WINDOW_INACTIVE="不在监控时间窗口内，暂停网络监控和重连。"
-    else
-        MSG_MONITOR_STARTED="Monitor script started."
-        MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
-        MSG_NETWORK_REACHABLE="Network has recovered."
-        MSG_NETWORK_UNREACHABLE="Network connectivity check failed (%s/%s)"
-        MSG_TRY_RELOGIN="Network unreachable for %s times, attempting to re-login..."
-        MSG_INTERFACE_NO_IP="Interface %s has no IP address, waiting for the next check."
-        MSG_DISCONNECT_TIME="Reached scheduled disconnect time, disconnecting network."
-        MSG_RECONNECT_TIME="Scheduled disconnect time ended, restoring network connection."
-        MSG_MONITOR_SCRIPT_STARTED="Monitor script started."
-        MSG_SERVICE_DISABLED="Service is disabled in the configuration, not starting."
-        MSG_LIMITED_MONITORING_ENABLED="Limited monitoring enabled."
-        MSG_LIMITED_MONITORING_DISABLED="Limited monitoring disabled."
-        MSG_MONITOR_WINDOW_ACTIVE="Within monitoring time window, performing network monitoring and reconnection."
-        MSG_MONITOR_WINDOW_INACTIVE="Outside monitoring time window, pausing network monitoring and reconnection."
     fi
 }
 

@@ -8,24 +8,8 @@ USE_PROCD=1
 # Source the shared logging utility functions
 . /usr/lib/uestc_authclient/log_utils.sh
 
-# Get the system language
-LANG=$(uci get luci.main.lang 2>/dev/null)
-[ -z "$LANG" ] && LANG="en"
-
-# Define messages based on the language
-if [ "$LANG" = "zh_cn" ]; then
-    MSG_DISABLED="UESTC 认证客户端在配置中被禁用，不启动服务。"
-    MSG_UNKNOWN_CLIENT_TYPE="未知的客户端类型："
-    MSG_USERNAME_PASSWORD_NOT_SET="用户名或密码未设置，服务无法启动。"
-    MSG_SERVICE_STARTED="服务已启动。"
-    MSG_SERVICE_STOPPED="服务已停止。"
-else
-    MSG_DISABLED="UESTC authentication client is disabled in the configuration, not starting service."
-    MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
-    MSG_USERNAME_PASSWORD_NOT_SET="Username or password not set, service cannot start."
-    MSG_SERVICE_STARTED="Service started."
-    MSG_SERVICE_STOPPED="Service stopped."
-fi
+# Source the internationalization support
+. /usr/lib/uestc_authclient/i18n.sh
 
 # Initialize logging
 log_init "/tmp/uestc_authclient.log"
@@ -35,7 +19,7 @@ boot() {
     if [ "$enabled" = "1" ]; then
         start
     else
-        log_message "$MSG_DISABLED"
+        log_message "$MSG_SERVICE_DISABLED"
     fi
 }
 
