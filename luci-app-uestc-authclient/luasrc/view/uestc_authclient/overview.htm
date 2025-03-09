@@ -1,12 +1,12 @@
 <%+header%>
 
 <%
---  Import necessary modules for form handling
+-- Import necessary modules for form handling
 local sys  = require "luci.sys"
 local fs   = require "nixio.fs"
 local http = require "luci.http"
 
---  Flag for detecting if an action was performed
+-- Flag for detecting if an action was performed
 local just_performed_action = false
 local action = http.formvalue("action")
 
@@ -24,6 +24,12 @@ end
 %>
 
 <style>
+/* Default (light mode) styles */
+body {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
 .status-card {
     background-color: #f9f9f9;
     border-radius: 8px;
@@ -32,57 +38,69 @@ end
     margin-bottom: 20px;
     position: relative;
 }
+
 .status-card h3 {
     margin-top: 0;
     border-bottom: 1px solid #e6e6e6;
     padding-bottom: 10px;
     margin-bottom: 15px;
 }
+
 .status-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
+
 .status-label {
     font-weight: bold;
 }
+
 .status-value {
     text-align: right;
 }
+
 .control-buttons {
     display: flex;
     justify-content: space-around;
     flex-wrap: wrap;
     gap: 10px;
 }
+
 .control-buttons button {
     min-width: 120px;
 }
+
 .log-container {
     margin-top: 20px;
 }
+
 .log-actions {
     display: flex;
     justify-content: flex-end;
     margin-top: 10px;
 }
+
 .alert-message {
     padding: 10px 15px;
     margin-bottom: 15px;
     border-radius: 4px;
     font-weight: bold;
 }
+
 .cbi-button-danger {
     background-color: #d9534f !important;
     color: white !important;
     border-color: #d43f3a !important;
 }
+
 .cbi-button-success {
     background-color: #5cb85c !important;
     color: white !important;
     border-color: #4cae4c !important;
 }
+
 .spinner {
     display: inline-block;
     width: 16px;
@@ -94,12 +112,15 @@ end
     margin-right: 5px;
     vertical-align: middle;
 }
+
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
 .hidden {
     display: none;
 }
+
 .loading-overlay {
     position: absolute;
     top: 0;
@@ -112,6 +133,7 @@ end
     align-items: center;
     z-index: 1000;
 }
+
 @media (max-width: 768px) {
     .status-item {
         flex-direction: column;
@@ -122,6 +144,62 @@ end
         margin-top: 5px;
     }
 }
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #181818;
+        color: #f0f0f0;
+    }
+
+    .status-card {
+        background-color: #2c2c2c;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .status-card h3 {
+        color: #f0f0f0;
+        border-bottom: 1px solid #444;
+    }
+
+    .status-label {
+        color: #f0f0f0;
+    }
+
+    .status-value {
+        color: #dcdcdc;
+    }
+
+    .control-buttons button {
+        background-color: #3e8e41;
+        border: 1px solid #5cb85c;
+    }
+
+    .cbi-button-danger {
+        background-color: #c9302c;
+        border-color: #ac2925;
+    }
+
+    .cbi-button-success {
+        background-color: #4cae4c;
+        border-color: #398439;
+    }
+
+    .spinner {
+        border-left-color: #4b8f29;
+    }
+
+    .log-actions button {
+        background-color: #d9534f;
+    }
+
+    .alert-message {
+        background-color: #4cae4c;
+        border: 1px solid #398439;
+        color: #ffffff;
+    }
+}
 </style>
 
 <h2><%:UESTC Authentication%></h2>
@@ -130,23 +208,20 @@ end
     <%:This page displays the current status of the UESTC authentication client and provides control functions.%>
 </div>
 
-<!--  Status section (initially shows 'Loading...' placeholders) -->
+<!-- Status section (initially shows 'Loading...' placeholders) -->
 <div class="status-card" id="status_card">
     <h3><%:Status%></h3>
     <div id="status_container">
         <div class="status-item">
             <div class="status-label"><%:Network Status%></div>
-            <!--  Placeholder, updated by updateStatus() -->
             <div class="status-value" id="network_status"><span><%:Updating...%></span></div>
         </div>
         <div class="status-item">
             <div class="status-label"><%:Last Login Time%></div>
-            <!--  Placeholder, updated by updateStatus() -->
             <div class="status-value" id="last_login"><span><%:Updating...%></span></div>
         </div>
         <div class="status-item">
             <div class="status-label"><%:Service Status%></div>
-            <!--  Placeholder, updated by updateStatus() -->
             <div class="status-value" id="service_status"><span><%:Updating...%></span></div>
         </div>
     </div>
@@ -156,19 +231,18 @@ end
     </div>
 </div>
 
-<!--  Control section with start/stop actions always disabled initially -->
+<!-- Control section with start/stop actions always disabled initially -->
 <div class="status-card">
     <h3><%:Control%></h3>
     <form id="control_form" method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
         <div class="control-buttons">
-            <!--  Buttons are not disabled by server side; they will be updated by Ajax if needed -->
             <button type="submit" name="action" value="start" class="cbi-button cbi-button-success" id="btn_start" disabled="true"><%:Start%></button>
             <button type="submit" name="action" value="stop" class="cbi-button cbi-button-danger" id="btn_stop" disabled="true"><%:Stop%></button>
         </div>
     </form>
 </div>
 
-<!--  Log display section -->
+<!-- Log display section -->
 <div class="status-card" id="log_card">
     <h3><%:Logs%></h3>
     <form id="log_form" method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
@@ -183,7 +257,7 @@ end
     </div>
 </div>
 
-<!--  If an action was just performed, we set a flag to trigger immediate update on page load -->
+<!-- If an action was just performed, we set a flag to trigger immediate update on page load -->
 <% if just_performed_action then %>
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
@@ -194,24 +268,24 @@ end
 <% end %>
 
 <script type="text/javascript">
-    //  Global variables for controlling update intervals and concurrency
+    // Global variables for controlling update intervals and concurrency
     var isUpdating = false;
     var updateQueue = false;
     var logUpdatePending = false;
     var lastLogUpdate = 0;
     var lastStatusUpdate = 0;
     
-    //  Show loading indicator by removing 'hidden' class
+    // Show loading indicator by removing 'hidden' class
     function showLoading(element) {
         document.getElementById(element).classList.remove('hidden');
     }
     
-    //  Hide loading indicator by adding 'hidden' class
+    // Hide loading indicator by adding 'hidden' class
     function hideLoading(element) {
         document.getElementById(element).classList.add('hidden');
     }
     
-    //  Ajax function to refresh logs
+    // Ajax function to refresh logs
     function refreshLog(showLoadingIndicator) {
         var now = Date.now();
         if (showLoadingIndicator) {
@@ -247,7 +321,7 @@ end
         xhr.send(null);
     }
 
-    //  Ajax function to update status
+    // Ajax function to update status
     function updateStatus(showLoadingIndicator) {
         // Prevent concurrent status updates
         if (isUpdating) {
@@ -282,7 +356,7 @@ end
                     try {
                         var response = JSON.parse(xhr.responseText);
                         
-                        //  Update "Network Status" display
+                        // Update "Network Status" display
                         var networkStatusEl = document.getElementById('network_status');
                         if (networkStatusEl) {
                             if (response.network_status === "connected") {
@@ -294,7 +368,7 @@ end
                             }
                         }
                         
-                        //  Update "Service Status" display and button states
+                        // Update "Service Status" display and button states
                         var serviceStatusEl = document.getElementById('service_status');
                         var btnStart = document.getElementById('btn_start');
                         var btnStop = document.getElementById('btn_stop');
@@ -311,7 +385,7 @@ end
                             }
                         }
                         
-                        //  Update "Last Login Time"
+                        // Update "Last Login Time"
                         var lastLoginEl = document.getElementById('last_login');
                         if (lastLoginEl && response.last_login) {
                             lastLoginEl.textContent = response.last_login;
@@ -325,7 +399,7 @@ end
         xhr.send(null);
     }
 
-    //  Form submission events for immediate feedback
+    // Form submission events for immediate feedback
     document.getElementById('control_form').addEventListener('submit', function(e) {
         var formData = new FormData(this);
         var actionValue = formData.get('action');
@@ -359,7 +433,7 @@ end
         }, 200);
     });
 
-    //  Initialize page on load
+    // Initialize page on load
     document.addEventListener('DOMContentLoaded', function() {
         // Load logs initially
         refreshLog(true);
