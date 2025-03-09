@@ -17,13 +17,24 @@ function index()
         cbi("uestc_authclient"),
         _("Configuration"), 2).leaf = true
 
+    entry({"admin", "services", "uestc_authclient", "start"},
+        call("action_start")).leaf = true
+
+    entry({"admin", "services", "uestc_authclient", "stop"},
+        call("action_stop")).leaf = true
+        
+    entry({"admin", "services", "uestc_authclient", "clear_log"},
+        call("action_clear_log")).leaf = true        
+
     entry({"admin", "services", "uestc_authclient", "get_log"},
         call("action_get_log")).leaf = true
         
     entry({"admin", "services", "uestc_authclient", "status"},
         call("action_status")).leaf = true
+
 end
 
+-- Function to get the current logs
 function action_get_log()
     local fs = require "nixio.fs"
     local http = require "luci.http"
@@ -66,7 +77,7 @@ function action_status()
     
     -- Get last login time
     local fs = require "nixio.fs"
-    local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or "none"
+    local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate("None")
     
     -- Prepare JSON response
     local result = {
@@ -77,4 +88,31 @@ function action_status()
     
     http.prepare_content("application/json")
     http.write(json.stringify(result))
+end
+
+-- start the service
+function action_start()
+    local sys = require "luci.sys"
+
+    -- Start the service
+    sys.call("/etc/init.d/uestc_authclient start")
+
+end
+
+-- stop the service
+function action_stop()
+    local sys = require "luci.sys"
+
+    -- Stop the service
+    sys.call("/etc/init.d/uestc_authclient stop")
+
+end
+
+-- clear the logs
+function action_clear_log()
+    local fs = require "nixio.fs"
+
+    -- Clear the log file
+    fs.writefile("/tmp/uestc_authclient.log", "")
+
 end
