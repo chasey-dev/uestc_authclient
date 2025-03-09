@@ -13,8 +13,8 @@
 #######################################
 init_config() {
     # Get client configuration
-    CLIENT_TYPE=$(uci get uestc_authclient.auth.auth_type 2>/dev/null)
-    [ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"  # Default to ct client
+    AUTH_TYPE=$(uci get uestc_authclient.auth.auth_type 2>/dev/null)
+    [ -z "$AUTH_TYPE" ] && AUTH_TYPE="ct"  # Default to ct client
 
     CHECK_INTERVAL=$(uci get uestc_authclient.listening.check_interval 2>/dev/null)
     [ -z "$CHECK_INTERVAL" ] && CHECK_INTERVAL=30  # Default check interval is 30 seconds
@@ -58,12 +58,12 @@ init_config() {
     limited_monitoring_notice_flag=0  # Flag to prevent loop logging
     
     # Select authentication script based on client type
-    if [ "$CLIENT_TYPE" = "ct" ]; then
+    if [ "$AUTH_TYPE" = "ct" ]; then
         AUTH_SCRIPT="/usr/bin/uestc_ct_authclient_script.sh"
-    elif [ "$CLIENT_TYPE" = "srun" ]; then
+    elif [ "$AUTH_TYPE" = "srun" ]; then
         AUTH_SCRIPT="/usr/bin/uestc_srun_authclient_script.sh"
     else
-        log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$CLIENT_TYPE"
+        log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$AUTH_TYPE"
         exit 1
     fi
 
