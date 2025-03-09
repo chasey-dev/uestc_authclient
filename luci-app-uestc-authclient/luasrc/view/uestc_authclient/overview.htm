@@ -1,19 +1,16 @@
 <%+header%>
 
 <%
-local sys = require "luci.sys"
-local fs = require "nixio.fs"
-local uci = require "luci.model.uci".cursor()
+--  Import necessary modules for form handling
+local sys  = require "luci.sys"
+local fs   = require "nixio.fs"
 local http = require "luci.http"
 
--- Path to the service script
-local PROG = "/usr/bin/uestc_authclient_monitor.sh"
-
--- Check if an action was just performed
+--  Flag for detecting if an action was performed
 local just_performed_action = false
 local action = http.formvalue("action")
 
--- Handle form submissions
+-- Handle form submissions for start/stop/clear_log
 if action == "start" then
     sys.call("/etc/init.d/uestc_authclient start")
     just_performed_action = true
@@ -24,35 +21,6 @@ elseif action == "clear_log" then
     fs.writefile("/tmp/uestc_authclient.log", "")
     just_performed_action = true
 end
-
--- Check if the service is running
-local is_running = (sys.call("pgrep -f '" .. PROG .. "' >/dev/null") == 0)
-
--- Check network status
-local network_status = translate("Not running")
-if is_running then
-    -- Get the list of heartbeat hosts
-    local heartbeat_hosts = uci:get_list("uestc_authclient", "authclient", "heartbeat_hosts") or {"223.5.5.5", "119.29.29.29"}
-    -- Check network connectivity
-    network_status = translate("Disconnected")
-    for _, host in ipairs(heartbeat_hosts) do
-        if sys.call("ping -c 1 -W 1 " .. host .. " >/dev/null 2>&1") == 0 then
-            network_status = translate("Connected")
-            break
-        end
-    end
-else
-    network_status = translate("Not running")
-end
-
-local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate("None")
-
--- Check for success message from config page
-local success_msg = nil
-if http.formvalue("success") == "1" then
-    success_msg = translate("Configuration has been saved and the service has been restarted!")
-end
-
 %>
 
 <style>
@@ -104,11 +72,6 @@ end
     margin-bottom: 15px;
     border-radius: 4px;
     font-weight: bold;
-}
-.alert-success {
-    background-color: #dff0d8;
-    border: 1px solid #d6e9c6;
-    color: #3c763d;
 }
 .cbi-button-danger {
     background-color: #d9534f !important;
@@ -167,60 +130,45 @@ end
     <%:This page displays the current status of the UESTC authentication client and provides control functions.%>
 </div>
 
-<% if success_msg then %>
-<div class="alert-message alert-success">
-    <%= success_msg %>
-</div>
-<% end %>
-
-<!-- Status section -->
+<!--  Status section (initially shows 'Loading...' placeholders) -->
 <div class="status-card" id="status_card">
     <h3><%:Status%></h3>
     <div id="status_container">
         <div class="status-item">
             <div class="status-label"><%:Network Status%></div>
-            <div class="status-value" id="network_status">
-                <% if network_status == translate("Connected") then %>
-                    <span style="color: green;"><strong><%=network_status%></strong></span>
-                <% elseif network_status == translate("Disconnected") then %>
-                    <span style="color: red;"><strong><%=network_status%></strong></span>
-                <% else %>
-                    <span><strong><%=network_status%></strong></span>
-                <% end %>
-            </div>
+            <!--  Placeholder, updated by updateStatus() -->
+            <div class="status-value" id="network_status"><span><%:Updating...%></span></div>
         </div>
         <div class="status-item">
             <div class="status-label"><%:Last Login Time%></div>
-            <div class="status-value" id="last_login"><%=last_login%></div>
+            <!--  Placeholder, updated by updateStatus() -->
+            <div class="status-value" id="last_login"><span><%:Updating...%></span></div>
         </div>
         <div class="status-item">
             <div class="status-label"><%:Service Status%></div>
-            <div class="status-value" id="service_status">
-                <% if is_running then %>
-                    <span style="color: green;"><strong><%:Running%></strong></span>
-                <% else %>
-                    <span style="color: red;"><strong><%:Not running%></strong></span>
-                <% end %>
-            </div>
+            <!--  Placeholder, updated by updateStatus() -->
+            <div class="status-value" id="service_status"><span><%:Updating...%></span></div>
         </div>
     </div>
     <div id="status_loading" class="loading-overlay hidden">
-        <div class="spinner" aria-hidden="true"></div> <span><%:Updating...%></span>
+        <div class="spinner" aria-hidden="true"></div> 
+        <span><%:Updating...%></span>
     </div>
 </div>
 
-<!-- Control section -->
+<!--  Control section with start/stop actions always enabled initially -->
 <div class="status-card">
     <h3><%:Control%></h3>
     <form id="control_form" method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
         <div class="control-buttons">
-            <button type="submit" name="action" value="start" class="cbi-button cbi-button-success" id="btn_start" <% if is_running then %>disabled<% end %>><%:Start%></button>
-            <button type="submit" name="action" value="stop" class="cbi-button cbi-button-danger" id="btn_stop" <% if not is_running then %>disabled<% end %>><%:Stop%></button>
+            <!--  Buttons are not disabled by server side; they will be updated by Ajax if needed -->
+            <button type="submit" name="action" value="start" class="cbi-button cbi-button-success" id="btn_start"><%:Start%></button>
+            <button type="submit" name="action" value="stop" class="cbi-button cbi-button-danger" id="btn_stop"><%:Stop%></button>
         </div>
     </form>
 </div>
 
-<!-- Log display section -->
+<!--  Log display section -->
 <div class="status-card" id="log_card">
     <h3><%:Logs%></h3>
     <form id="log_form" method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
@@ -230,49 +178,47 @@ end
         </div>
     </form>
     <div id="log_loading" class="loading-overlay hidden">
-        <div class="spinner" aria-hidden="true"></div> <span><%:Updating logs...%></span>
+        <div class="spinner" aria-hidden="true"></div> 
+        <span><%:Updating logs...%></span>
     </div>
 </div>
 
-<!-- Init script for status and immediate action -->
+<!--  If an action was just performed, we set a flag to trigger immediate update on page load -->
 <% if just_performed_action then %>
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
-        // If an action was just performed, update immediately
         document.getElementById('status_loading').classList.remove('hidden');
-        
-        // We'll trigger the update in the main script
         window.actionJustPerformed = true;
     });
 </script>
 <% end %>
 
 <script type="text/javascript">
-    // Global variables
+    //  Global variables for controlling update intervals and concurrency
     var isUpdating = false;
     var updateQueue = false;
     var logUpdatePending = false;
     var lastLogUpdate = 0;
     var lastStatusUpdate = 0;
     
-    // Show loading indicator
+    //  Show loading indicator by removing 'hidden' class
     function showLoading(element) {
         document.getElementById(element).classList.remove('hidden');
     }
     
-    // Hide loading indicator
+    //  Hide loading indicator by adding 'hidden' class
     function hideLoading(element) {
         document.getElementById(element).classList.add('hidden');
     }
     
-    // Function to refresh logs
+    //  Ajax function to refresh logs
     function refreshLog(showLoadingIndicator) {
         var now = Date.now();
         if (showLoadingIndicator) {
             showLoading('log_loading');
         }
         
-        // Prevent concurrent updates
+        // Prevent concurrent log updates
         if (logUpdatePending) {
             return;
         }
@@ -284,11 +230,11 @@ end
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/get_log")%>?_t=' + now, true);
         xhr.onreadystatechange = function() {
-            if (xhr.readyState == XMLHttpRequest.DONE) {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
                 logUpdatePending = false;
                 hideLoading('log_loading');
                 
-                if (xhr.status == 200) {
+                if (xhr.status === 200) {
                     var logContent = document.getElementById('log_content');
                     var isAtBottom = (logContent.scrollTop + logContent.clientHeight) >= (logContent.scrollHeight - 5);
                     logContent.value = xhr.responseText;
@@ -301,9 +247,9 @@ end
         xhr.send(null);
     }
 
-    // Function to update status
+    //  Ajax function to update status
     function updateStatus(showLoadingIndicator) {
-        // Prevent concurrent updates
+        // Prevent concurrent status updates
         if (isUpdating) {
             updateQueue = true;
             return;
@@ -320,21 +266,23 @@ end
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/status")%>?_t=' + now, true);
         xhr.onreadystatechange = function() {
-            if (xhr.readyState == XMLHttpRequest.DONE) {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
                 isUpdating = false;
                 hideLoading('status_loading');
                 
                 // Check if another update is queued
                 if (updateQueue) {
                     updateQueue = false;
-                    setTimeout(function() { updateStatus(true); }, 100);
+                    setTimeout(function() {
+                        updateStatus(true);
+                    }, 100);
                 }
                 
-                if (xhr.status == 200) {
+                if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
                         
-                        // Update network status
+                        //  Update "Network Status" display
                         var networkStatusEl = document.getElementById('network_status');
                         if (networkStatusEl) {
                             if (response.network_status === "connected") {
@@ -346,7 +294,7 @@ end
                             }
                         }
                         
-                        // Update service status
+                        //  Update "Service Status" display and button states
                         var serviceStatusEl = document.getElementById('service_status');
                         var btnStart = document.getElementById('btn_start');
                         var btnStop = document.getElementById('btn_stop');
@@ -363,7 +311,7 @@ end
                             }
                         }
                         
-                        // Update last login
+                        //  Update "Last Login Time"
                         var lastLoginEl = document.getElementById('last_login');
                         if (lastLoginEl && response.last_login) {
                             lastLoginEl.textContent = response.last_login;
@@ -377,12 +325,12 @@ end
         xhr.send(null);
     }
 
-    // Optimized form submission with immediate visual feedback
+    //  Form submission events for immediate feedback
     document.getElementById('control_form').addEventListener('submit', function(e) {
         var formData = new FormData(this);
         var actionValue = formData.get('action');
         
-        // Immediate UI changes for better responsiveness
+        // Instant feedback in UI
         if (actionValue === 'start') {
             var btnStart = document.getElementById('btn_start');
             var serviceStatusEl = document.getElementById('service_status');
@@ -395,52 +343,48 @@ end
             if (serviceStatusEl) serviceStatusEl.innerHTML = '<div class="spinner"></div> <span><%:Stopping...%></span>';
         }
         
-        // Update status after a short delay
+        // Schedule a status + log update after a short delay
         showLoading('status_loading');
-        setTimeout(function() { 
-            updateStatus(true); 
+        setTimeout(function() {
+            updateStatus(true);
             refreshLog(false);
         }, 200);
     });
 
     document.getElementById('log_form').addEventListener('submit', function() {
         showLoading('log_loading');
-        // Update logs after a short delay
-        setTimeout(function() { refreshLog(true); }, 200);
+        // Delay to let the system clear the log, then refresh
+        setTimeout(function() {
+            refreshLog(true);
+        }, 200);
     });
 
-    // Initialize on page load
+    //  Initialize page on load
     document.addEventListener('DOMContentLoaded', function() {
-        // Initial log load
+        // Load logs initially
         refreshLog(true);
         
-        // Check if an action was just performed from previous script
+        // If the page was just submitted with an action, do an immediate status update
         if (window.actionJustPerformed) {
-            setTimeout(function() { updateStatus(true); }, 100);
+            setTimeout(function() {
+                updateStatus(true);
+            }, 100);
         }
         
-        // Auto refresh status and logs with optimized intervals
+        // Automatic periodic status/ log refresh
         var statusInterval = setInterval(function() {
-            // Only auto-update if it's been more than 3 seconds since last update
+            // Only update if more than 3s since last status update
             if (Date.now() - lastStatusUpdate > 3000) {
                 updateStatus(false);
             }
         }, 2500);
         
         var logInterval = setInterval(function() {
-            // Only auto-update if it's been more than 2 seconds since last update
+            // Only update if more than 2s since last log update
             if (Date.now() - lastLogUpdate > 2000) {
                 refreshLog(false);
             }
         }, 2000);
-        
-        // Auto hide success message after 5 seconds
-        var successAlert = document.querySelector('.alert-success');
-        if (successAlert) {
-            setTimeout(function() {
-                successAlert.style.display = 'none';
-            }, 5000);
-        }
     });
 </script>
 

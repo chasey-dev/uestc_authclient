@@ -13,37 +13,37 @@
 #######################################
 init_config() {
     # Get client configuration
-    CLIENT_TYPE=$(uci get uestc_authclient.@authclient[0].client_type 2>/dev/null)
+    CLIENT_TYPE=$(uci get uestc_authclient.auth.auth_type 2>/dev/null)
     [ -z "$CLIENT_TYPE" ] && CLIENT_TYPE="ct"  # Default to ct client
 
-    CHECK_INTERVAL=$(uci get uestc_authclient.@authclient[0].check_interval 2>/dev/null)
+    CHECK_INTERVAL=$(uci get uestc_authclient.listening.check_interval 2>/dev/null)
     [ -z "$CHECK_INTERVAL" ] && CHECK_INTERVAL=30  # Default check interval is 30 seconds
 
     # Get heartbeat hosts list
-    HEARTBEAT_HOSTS=$(uci -q get uestc_authclient.@authclient[0].heartbeat_hosts)
+    HEARTBEAT_HOSTS=$(uci -q get uestc_authclient.listening.heartbeat_hosts)
     [ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
 
-    INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
+    INTERFACE=$(uci get uestc_authclient.listening.interface 2>/dev/null)
     [ -z "$INTERFACE" ] && INTERFACE="wan"
 
-    LOG_RETENTION_DAYS=$(uci get uestc_authclient.@authclient[0].log_retention_days 2>/dev/null)
+    LOG_RETENTION_DAYS=$(uci get uestc_authclient.logging.retention_days 2>/dev/null)
     [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
 
     # Initialize logging with the correct log file
     log_init "/tmp/uestc_authclient.log"
 
     # Limited monitoring
-    LIMITED_MONITORING=$(uci get uestc_authclient.@authclient[0].limited_monitoring 2>/dev/null)
+    LIMITED_MONITORING=$(uci get uestc_authclient.basic.limited_monitoring 2>/dev/null)
     [ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
 
     # Scheduled disconnect configuration
-    scheduled_disconnect_enabled=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_enabled 2>/dev/null)
+    scheduled_disconnect_enabled=$(uci get uestc_authclient.schedule.enabled 2>/dev/null)
     [ -z "$scheduled_disconnect_enabled" ] && scheduled_disconnect_enabled=0
 
-    scheduled_disconnect_start=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_start 2>/dev/null)
+    scheduled_disconnect_start=$(uci get uestc_authclient.schedule.disconnect_start 2>/dev/null)
     [ -z "$scheduled_disconnect_start" ] && scheduled_disconnect_start=3
 
-    scheduled_disconnect_end=$(uci get uestc_authclient.@authclient[0].scheduled_disconnect_end 2>/dev/null)
+    scheduled_disconnect_end=$(uci get uestc_authclient.schedule.disconnect_end 2>/dev/null)
     [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
 
     # Define files and variables

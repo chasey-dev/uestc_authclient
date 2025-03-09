@@ -13,15 +13,15 @@ log_init "/tmp/uestc_authclient.log"
 SRUN_BIN="/usr/bin/go-nd-portal"
 
 # Get the interface
-INTERFACE=$(uci get uestc_authclient.@authclient[0].interface 2>/dev/null)
+INTERFACE=$(uci get uestc_authclient.listening.interface 2>/dev/null)
 [ -z "$INTERFACE" ] && INTERFACE="wan"
 
 # Get srun_client settings
-USERNAME=$(uci get uestc_authclient.@authclient[0].srun_client_username 2>/dev/null)
-PASSWORD=$(uci get uestc_authclient.@authclient[0].srun_client_password 2>/dev/null)
-AUTH_MODE=$(uci get uestc_authclient.@authclient[0].srun_client_auth_mode 2>/dev/null)
+USERNAME=$(uci get uestc_authclient.auth.srun_username 2>/dev/null)
+PASSWORD=$(uci get uestc_authclient.auth.srun_password 2>/dev/null)
+AUTH_MODE=$(uci get uestc_authclient.auth.srun_auth_mode 2>/dev/null)
 [ -z "$AUTH_MODE" ] && AUTH_MODE="dx"
-HOST=$(uci get uestc_authclient.@authclient[0].srun_client_host 2>/dev/null)
+HOST=$(uci get uestc_authclient.auth.srun_host 2>/dev/null)
 [ -z "$HOST" ] && HOST="10.253.0.237"
 
 LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"

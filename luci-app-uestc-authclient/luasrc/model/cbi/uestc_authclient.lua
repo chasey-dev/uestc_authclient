@@ -1,224 +1,214 @@
-local m, s, o
-local uci = require "luci.model.uci".cursor()
-local net = require "luci.model.network".init()
-local sys = require "luci.sys"
+local sys   = require "luci.sys"
+local uci   = require "luci.model.uci".cursor()
+local net   = require "luci.model.network".init()
 
-m = Map("uestc_authclient", translate("UESTC Authentication Client"))
+-- Create the Map referencing /etc/config/uestc_authclient
+local m = Map("uestc_authclient", translate("UESTC Authentication Client"),
+    translate("This page is used to configure the UESTC authentication client. Please fill in your username and password, and adjust other settings as needed.")
+)
 
--- Add description
-m.description = translate("This page is used to configure the UESTC authentication client. Please fill in your username and password, and adjust other settings as needed.")
-
--- Primary settings section
-s = m:section(TypedSection, "authclient", translate("Basic Settings"))
-s.anonymous = true
+------------------------------------------------------------------------------
+-- 1) Basic Settings: config system 'basic'
+------------------------------------------------------------------------------
+local sBasic = m:section(NamedSection, "basic", "system", translate("Basic Settings"))
+sBasic.anonymous = true
 
 -- Enable on startup
-o = s:option(Flag, "enabled", translate("Enable on startup"))
+local o = sBasic:option(Flag, "enabled", translate("Enable on startup"))
 o.default = "0"
-o.rmempty = false
 o.description = translate("Check to run the service automatically at system startup.")
 
 -- Limited monitoring
-o = s:option(Flag, "limited_monitoring", translate("Limited Monitoring"))
+o = sBasic:option(Flag, "limited_monitoring", translate("Limited Monitoring"))
 o.default = "1"
-o.rmempty = true
 o.description = translate("Check to limit monitoring and reconnection attempts to within 10 minutes around the last login time.")
 
--- Authentication method selection
-o = s:option(ListValue, "client_type", translate("Authentication method"))
-o.default = "ct"
-o.description = translate("Select the authentication method. New dormitories and teaching areas use the Srun authentication method.")
-o:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
-o:value("srun", translate("Srun authentication method (go-nd-portal)"))
-o.rmempty = false
 
--- CT Authentication settings
-s = m:section(TypedSection, "authclient", translate("CT Authentication Settings"))
-s.anonymous = true
-s:depends("client_type", "ct")
+------------------------------------------------------------------------------
+-- 2) Authentication Settings: config auth 'auth'
+------------------------------------------------------------------------------
+-- Use one TypedSection, so we can do option:depends(...) for real-time toggling
+local sAuth = m:section(TypedSection, "auth", translate("Authentication Settings"))
+sAuth.anonymous = true
 
--- CT Username
-o = s:option(Value, "ct_client_username", translate("CT authentication username"))
-o.datatype = "string"
-o.description = translate("Your CT authentication username.")
-o.placeholder = translate("Required")
-o.rmempty = true
+-- Authentication method
+local ctype = sAuth:option(ListValue, "client_type", translate("Authentication method"))
+ctype.default = "ct"
+ctype:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
+ctype:value("srun", translate("Srun authentication method (go-nd-portal)"))
+ctype.description = translate("Select the authentication method. New dormitories and teaching areas use the Srun authentication method.")
 
-function o.validate(self, value, section)
-    local client_type = m:get(section, "client_type")
-    if client_type == "ct" then
-        if value == nil or value == "" then
+----------------------[ CT fields ]----------------------
+
+local oCTUser = sAuth:option(Value, "ct_username", translate("CT authentication username"))
+oCTUser.datatype = "string"
+oCTUser.description = translate("Your CT authentication username.")
+oCTUser.placeholder = translate("Required")
+oCTUser:depends("client_type", "ct")
+
+function oCTUser.validate(self, value, section)
+    local val = value and value:trim()
+    if sAuth:cfgvalue(section, "client_type") == "ct" then
+        if not val or val == "" then
             return nil, translate("Username cannot be empty.")
         end
     end
-    return value
+    return val
 end
 
--- CT Password
-o = s:option(Value, "ct_client_password", translate("CT authentication password"))
-o.datatype = "string"
-o.password = true
-o.description = translate("Your CT authentication password.")
-o.placeholder = translate("Required")
-o.rmempty = true
+local oCTPass = sAuth:option(Value, "ct_password", translate("CT authentication password"))
+oCTPass.datatype = "string"
+oCTPass.password = true
+oCTPass.description = translate("Your CT authentication password.")
+oCTPass.placeholder = translate("Required")
+oCTPass:depends("client_type", "ct")
 
-function o.validate(self, value, section)
-    local client_type = m:get(section, "client_type")
-    if client_type == "ct" then
-        if value == nil or value == "" then
+function oCTPass.validate(self, value, section)
+    local val = value and value:trim()
+    if sAuth:cfgvalue(section, "client_type") == "ct" then
+        if not val or val == "" then
             return nil, translate("Password cannot be empty.")
         end
     end
-    return value
+    return val
 end
 
--- CT Host
-o = s:option(Value, "ct_client_host", translate("CT authentication host"))
-o.datatype = "host"
-o.default = "172.25.249.64"
-o.description = translate("CT authentication server address, usually no need to modify.")
-o.placeholder = "172.25.249.64"
+local oCTHost = sAuth:option(Value, "ct_host", translate("CT authentication host"))
+oCTHost.datatype = "host"
+oCTHost.default = "172.25.249.64"
+oCTHost.description = translate("CT authentication server address, usually no need to modify.")
+oCTHost:depends("client_type", "ct")
 
--- Srun Authentication settings
-s = m:section(TypedSection, "authclient", translate("Srun Authentication Settings"))
-s.anonymous = true
-s:depends("client_type", "srun")
+----------------------[ Srun fields ]----------------------
 
--- Srun Username
-o = s:option(Value, "srun_client_username", translate("Srun authentication username"))
-o.datatype = "string"
-o.description = translate("Your Srun authentication username.")
-o.placeholder = translate("Required")
-o.rmempty = true
+local oSrunUser = sAuth:option(Value, "srun_username", translate("Srun authentication username"))
+oSrunUser.datatype = "string"
+oSrunUser.placeholder = translate("Required")
+oSrunUser.description = translate("Your Srun authentication username.")
+oSrunUser:depends("client_type", "srun")
 
-function o.validate(self, value, section)
-    local client_type = m:get(section, "client_type")
-    if client_type == "srun" then
-        if value == nil or value == "" then
+function oSrunUser.validate(self, value, section)
+    local val = value and value:trim()
+    if sAuth:cfgvalue(section, "client_type") == "srun" then
+        if not val or val == "" then
             return nil, translate("Username cannot be empty.")
         end
     end
-    return value
+    return val
 end
 
--- Srun Password
-o = s:option(Value, "srun_client_password", translate("Srun authentication password"))
-o.datatype = "string"
-o.password = true
-o.description = translate("Your Srun authentication password.")
-o.placeholder = translate("Required")
-o.rmempty = true
+local oSrunPass = sAuth:option(Value, "srun_password", translate("Srun authentication password"))
+oSrunPass.datatype = "string"
+oSrunPass.password = true
+oSrunPass.placeholder = translate("Required")
+oSrunPass.description = translate("Your Srun authentication password.")
+oSrunPass:depends("client_type", "srun")
 
-function o.validate(self, value, section)
-    local client_type = m:get(section, "client_type")
-    if client_type == "srun" then
-        if value == nil or value == "" then
+function oSrunPass.validate(self, value, section)
+    local val = value and value:trim()
+    if sAuth:cfgvalue(section, "client_type") == "srun" then
+        if not val or val == "" then
             return nil, translate("Password cannot be empty.")
         end
     end
-    return value
+    return val
 end
 
--- Authentication mode
-o = s:option(ListValue, "srun_client_auth_mode", translate("Srun authentication mode"))
-o.default = "dx"
-o:value("dx", translate("China Telecom"))
-o:value("edu", translate("Campus Network"))
-o.description = translate("Select the authentication mode for the Srun client.")
+local oSrunMode = sAuth:option(ListValue, "srun_auth_mode", translate("Srun authentication mode"))
+oSrunMode:value("dx", translate("China Telecom"))
+oSrunMode:value("edu", translate("Campus Network"))
+oSrunMode.default = "dx"
+oSrunMode.description = translate("Select the authentication mode for the Srun client.")
+oSrunMode:depends("client_type", "srun")
 
--- Srun Host
-o = s:option(Value, "srun_client_host", translate("Srun authentication host"))
-o.datatype = "ipaddr"
-o.default = "10.253.0.237"
-o.description = translate("Srun authentication server address, modify according to your area.")
-o.placeholder = "10.253.0.237"
+local oSrunHost = sAuth:option(Value, "srun_host", translate("Srun authentication host"))
+oSrunHost.datatype = "ipaddr"
+oSrunHost.default = "10.253.0.237"
+oSrunHost.description = translate("Srun authentication server address, modify according to your area.")
+oSrunHost:depends("client_type", "srun")
 
--- Network settings section
-s = m:section(TypedSection, "authclient", translate("Network Settings"))
-s.anonymous = true
 
--- Network interface
-o = s:option(ListValue, "interface", translate("Network interface"))
-o.default = "wan"
-o.description = translate("Select the network interface for authentication.")
-o.placeholder = "wan"
+------------------------------------------------------------------------------
+-- 3) Network Settings: config system 'listening'
+------------------------------------------------------------------------------
+local sNet = m:section(NamedSection, "listening", "system", translate("Network Settings"))
+sNet.anonymous = true
 
--- Get network interface list
+local oIf = sNet:option(ListValue, "interface", translate("Network interface"))
+oIf.default = "wan"
+oIf.description = translate("Select the network interface for authentication.")
+
 local netlist = net:get_networks()
 for _, iface in ipairs(netlist) do
     local name = iface:name()
     if name and name ~= "loopback" then
-        o:value(name)
+        oIf:value(name)
     end
 end
 
--- Heartbeat hosts (support multiple)
-o = s:option(DynamicList, "heartbeat_hosts", translate("Heartbeat hosts"))
-o.datatype = "host"
-o.default = {"223.5.5.5", "119.29.29.29"}
-o.description = translate("Host addresses used to check network connectivity; you can add multiple addresses.")
+local oHb = sNet:option(DynamicList, "heartbeat_hosts", translate("Heartbeat hosts"))
+oHb.datatype = "host"
+oHb.description = translate("Host addresses used to check network connectivity; you can add multiple addresses.")
 
--- Check interval
-o = s:option(Value, "check_interval", translate("Check interval (seconds)"))
-o.datatype = "uinteger"
-o.default = "30"
-o.description = translate("Time interval for checking network status, in seconds.")
-o.placeholder = "30"
+local oCheck = sNet:option(Value, "check_interval", translate("Check interval (seconds)"))
+oCheck.datatype = "uinteger"
+oCheck.default = "30"
+oCheck.description = translate("Time interval for checking network status, in seconds.")
 
--- Advanced settings section
-s = m:section(TypedSection, "authclient", translate("Advanced Settings"))
-s.anonymous = true
 
--- Log retention days
-o = s:option(Value, "log_retention_days", translate("Log retention days"))
-o.datatype = "uinteger"
-o.default = "7"
-o.description = translate("Specify the number of days to retain log files; logs exceeding this period will be cleared.")
-o.placeholder = "7"
+------------------------------------------------------------------------------
+-- 4) Logging Settings: config system 'logging'
+------------------------------------------------------------------------------
+local sLog = m:section(NamedSection, "logging", "system", translate("Logging Settings"))
+sLog.anonymous = true
 
--- Scheduled disconnection section
-s = m:section(TypedSection, "authclient", translate("Scheduled Disconnection"))
-s.anonymous = true
+local oRet = sLog:option(Value, "retention_days", translate("Log retention days"))
+oRet.datatype = "uinteger"
+oRet.default = "7"
+oRet.description = translate("Specify the number of days to retain log files; logs exceeding this period will be cleared.")
 
--- Scheduled disconnection feature
-o = s:option(Flag, "scheduled_disconnect_enabled", translate("Enable scheduled disconnection"))
-o.default = "1"
-o.rmempty = false
-o.description = translate("Check to disconnect the network during specified time periods.")
 
--- Scheduled disconnect start time
-o = s:option(ListValue, "scheduled_disconnect_start", translate("Disconnection start time (hour)"))
+------------------------------------------------------------------------------
+-- 5) Scheduled Disconnection: config system 'schedule'
+------------------------------------------------------------------------------
+local sSched = m:section(NamedSection, "schedule", "system", translate("Scheduled Disconnection"))
+sSched.anonymous = true
+
+local oEn = sSched:option(Flag, "enabled", translate("Enable scheduled disconnection"))
+oEn.default = "1"
+oEn.description = translate("Check to disconnect the network during specified time periods.")
+
+local st = sSched:option(ListValue, "disconnect_start", translate("Disconnection start time (hour)"))
 for i = 0, 23 do
-    o:value(i, string.format("%02d:00", i))
+    st:value(i, string.format("%02d:00", i))
 end
-o.default = "3"
-o:depends("scheduled_disconnect_enabled", "1")
+st.default = "3"
+st:depends("enabled", "1")
 
--- Scheduled disconnect end time
-o = s:option(ListValue, "scheduled_disconnect_end", translate("Disconnection end time (hour)"))
+local et = sSched:option(ListValue, "disconnect_end", translate("Disconnection end time (hour)"))
 for i = 0, 23 do
-    o:value(i, string.format("%02d:00", i))
+    et:value(i, string.format("%02d:00", i))
 end
-o.default = "4"
-o:depends("scheduled_disconnect_enabled", "1")
+et.default = "4"
+et:depends("enabled", "1")
 
--- Validate time range
-function o.validate(self, value, section)
-    local enabled = m:get(section, "scheduled_disconnect_enabled")
-    if enabled == "1" then
-        local start_time = tonumber(m:get(section, "scheduled_disconnect_start"))
-        local end_time = tonumber(value)
-        if start_time and end_time and start_time == end_time then
+function et.validate(self, value, section)
+    local en = uci:get("uestc_authclient", "schedule", "enabled")
+    if en == "1" then
+        local start_val = uci:get("uestc_authclient", "schedule", "disconnect_start")
+        if tostring(value) == tostring(start_val) then
             return nil, translate("Disconnection start time and end time cannot be the same!")
         end
     end
     return value
 end
 
--- Add on_commit function to restart the service after applying configuration
+
+------------------------------------------------------------------------------
+-- on_commit: save & restart
+------------------------------------------------------------------------------
 function m.on_commit(self)
-    -- Add notification for user
-    luci.http.redirect(luci.dispatcher.build_url("admin/services/uestc_authclient") .. "?success=1")
+    -- restart the service
     sys.call("/etc/init.d/uestc_authclient restart >/dev/null 2>&1 &")
 end
 

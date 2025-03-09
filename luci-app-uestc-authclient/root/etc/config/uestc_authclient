@@ -1,25 +1,48 @@
-config authclient 'authclient'
+###############################################################################
+# Basic Settings
+###############################################################################
+config system 'basic'
     option enabled '0'
-    option client_type 'ct'  # Supports 'ct' or 'srun'
+    option limited_monitoring '1'
+    # (client_type 移除，改在 auth 'auth' 节里)
 
-    # General settings
+###############################################################################
+# Authentication Settings (CT / Srun)
+###############################################################################
+config auth 'auth'
+    # Authentication method selection
+    option auth_type 'ct'
+
+    # CT client settings
+    option ct_username ''
+    option ct_password ''
+    option ct_host '172.25.249.64'
+
+    # Srun client settings
+    option srun_username ''
+    option srun_password ''
+    option srun_auth_mode 'dx'    # e.g. 'dx', 'edu'
+    option srun_host '10.253.0.237'
+
+###############################################################################
+# Network Settings
+###############################################################################
+config system 'listening'
     option interface 'wan'
     list heartbeat_hosts '223.5.5.5'
     list heartbeat_hosts '119.29.29.29'
     option check_interval '30'
-    option log_retention_days '7'
-    option scheduled_disconnect_enabled '1'
-    option scheduled_disconnect_start '3'
-    option scheduled_disconnect_end '4'
-    option limited_monitoring '1'
 
-    # CT client settings
-    option ct_client_username ''
-    option ct_client_password ''
-    option ct_client_host '172.25.249.64'
+###############################################################################
+# Logging Settings
+###############################################################################
+config system 'logging'
+    option retention_days '7'
 
-    # Srun client settings
-    option srun_client_username ''
-    option srun_client_password ''
-    option srun_client_auth_mode 'dx'  # Authentication mode, e.g., 'dx', 'edu', etc.
-    option srun_client_host '10.253.0.237'  # Authentication server IP
+###############################################################################
+# Scheduled Disconnection
+###############################################################################
+config system 'schedule'
+    option enabled '1'
+    option disconnect_start '3'
+    option disconnect_end '4'
