@@ -32,7 +32,7 @@ local sAuth = m:section(TypedSection, "auth", translate("Authentication Settings
 sAuth.anonymous = true
 
 -- Authentication method
-local ctype = sAuth:option(ListValue, "client_type", translate("Authentication method"))
+local ctype = sAuth:option(ListValue, "auth_type", translate("Authentication method"))
 ctype.default = "ct"
 ctype:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
 ctype:value("srun", translate("Srun authentication method (go-nd-portal)"))
@@ -44,11 +44,11 @@ local oCTUser = sAuth:option(Value, "ct_username", translate("CT authentication 
 oCTUser.datatype = "string"
 oCTUser.description = translate("Your CT authentication username.")
 oCTUser.placeholder = translate("Required")
-oCTUser:depends("client_type", "ct")
+oCTUser:depends("auth_type", "ct")
 
 function oCTUser.validate(self, value, section)
     local val = value and value:trim()
-    if sAuth:cfgvalue(section, "client_type") == "ct" then
+    if sAuth:cfgvalue(section, "auth_type") == "ct" then
         if not val or val == "" then
             return nil, translate("Username cannot be empty.")
         end
@@ -61,11 +61,11 @@ oCTPass.datatype = "string"
 oCTPass.password = true
 oCTPass.description = translate("Your CT authentication password.")
 oCTPass.placeholder = translate("Required")
-oCTPass:depends("client_type", "ct")
+oCTPass:depends("auth_type", "ct")
 
 function oCTPass.validate(self, value, section)
     local val = value and value:trim()
-    if sAuth:cfgvalue(section, "client_type") == "ct" then
+    if sAuth:cfgvalue(section, "auth_type") == "ct" then
         if not val or val == "" then
             return nil, translate("Password cannot be empty.")
         end
@@ -77,7 +77,7 @@ local oCTHost = sAuth:option(Value, "ct_host", translate("CT authentication host
 oCTHost.datatype = "host"
 oCTHost.default = "172.25.249.64"
 oCTHost.description = translate("CT authentication server address, usually no need to modify.")
-oCTHost:depends("client_type", "ct")
+oCTHost:depends("auth_type", "ct")
 
 ----------------------[ Srun fields ]----------------------
 
@@ -85,11 +85,11 @@ local oSrunUser = sAuth:option(Value, "srun_username", translate("Srun authentic
 oSrunUser.datatype = "string"
 oSrunUser.placeholder = translate("Required")
 oSrunUser.description = translate("Your Srun authentication username.")
-oSrunUser:depends("client_type", "srun")
+oSrunUser:depends("auth_type", "srun")
 
 function oSrunUser.validate(self, value, section)
     local val = value and value:trim()
-    if sAuth:cfgvalue(section, "client_type") == "srun" then
+    if sAuth:cfgvalue(section, "auth_type") == "srun" then
         if not val or val == "" then
             return nil, translate("Username cannot be empty.")
         end
@@ -102,11 +102,11 @@ oSrunPass.datatype = "string"
 oSrunPass.password = true
 oSrunPass.placeholder = translate("Required")
 oSrunPass.description = translate("Your Srun authentication password.")
-oSrunPass:depends("client_type", "srun")
+oSrunPass:depends("auth_type", "srun")
 
 function oSrunPass.validate(self, value, section)
     local val = value and value:trim()
-    if sAuth:cfgvalue(section, "client_type") == "srun" then
+    if sAuth:cfgvalue(section, "auth_type") == "srun" then
         if not val or val == "" then
             return nil, translate("Password cannot be empty.")
         end
@@ -119,13 +119,13 @@ oSrunMode:value("dx", translate("China Telecom"))
 oSrunMode:value("edu", translate("Campus Network"))
 oSrunMode.default = "dx"
 oSrunMode.description = translate("Select the authentication mode for the Srun client.")
-oSrunMode:depends("client_type", "srun")
+oSrunMode:depends("auth_type", "srun")
 
 local oSrunHost = sAuth:option(Value, "srun_host", translate("Srun authentication host"))
 oSrunHost.datatype = "ipaddr"
 oSrunHost.default = "10.253.0.237"
 oSrunHost.description = translate("Srun authentication server address, modify according to your area.")
-oSrunHost:depends("client_type", "srun")
+oSrunHost:depends("auth_type", "srun")
 
 
 ------------------------------------------------------------------------------

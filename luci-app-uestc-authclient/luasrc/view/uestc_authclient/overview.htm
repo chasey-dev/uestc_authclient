@@ -156,14 +156,14 @@ end
     </div>
 </div>
 
-<!--  Control section with start/stop actions always enabled initially -->
+<!--  Control section with start/stop actions always disabled initially -->
 <div class="status-card">
     <h3><%:Control%></h3>
     <form id="control_form" method="post" action="<%=luci.dispatcher.build_url("admin/services/uestc_authclient")%>">
         <div class="control-buttons">
             <!--  Buttons are not disabled by server side; they will be updated by Ajax if needed -->
-            <button type="submit" name="action" value="start" class="cbi-button cbi-button-success" id="btn_start"><%:Start%></button>
-            <button type="submit" name="action" value="stop" class="cbi-button cbi-button-danger" id="btn_stop"><%:Stop%></button>
+            <button type="submit" name="action" value="start" class="cbi-button cbi-button-success" id="btn_start" disabled="true"><%:Start%></button>
+            <button type="submit" name="action" value="stop" class="cbi-button cbi-button-danger" id="btn_stop" disabled="true"><%:Stop%></button>
         </div>
     </form>
 </div>

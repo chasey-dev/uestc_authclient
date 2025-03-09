@@ -4,7 +4,6 @@
 config system 'basic'
     option enabled '0'
     option limited_monitoring '1'
-    # (client_type 移除，改在 auth 'auth' 节里)
 
 ###############################################################################
 # Authentication Settings (CT / Srun)
