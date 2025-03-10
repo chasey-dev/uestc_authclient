@@ -47,8 +47,8 @@ msgstr "Srun认证设置"
 msgid "Network Settings"
 msgstr "网络设置"
 
-msgid "Advanced Settings"
-msgstr "高级设置"
+msgid "Logging Settings"
+msgstr "日志设置"
 
 msgid "Scheduled Disconnection"
 msgstr "定时断网设置"
