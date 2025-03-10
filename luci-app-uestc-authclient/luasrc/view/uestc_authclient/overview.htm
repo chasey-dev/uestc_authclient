@@ -2,19 +2,183 @@
 
 
 <style>
-/* Default (light mode) styles */
-body {
-    background-color: #f0f0f0;
-    color: #333;
-}
-
-/* Other styles remain the same as in the previous code */
-
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-    /* Dark mode styles remain the same as in the previous code */
-}
-</style>
+    /* Default (light mode) styles */
+    body {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+    
+    .status-card {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .status-card h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #e6e6e6;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .status-label {
+        font-weight: bold;
+    }
+    
+    .status-value {
+        text-align: right;
+    }
+    
+    .control-buttons {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .control-buttons button {
+        min-width: 120px;
+    }
+    
+    .log-container {
+        margin-top: 20px;
+    }
+    
+    .log-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+    
+    .alert-message {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    .cbi-button-danger {
+        background-color: #d9534f !important;
+        color: white !important;
+        border-color: #d43f3a !important;
+    }
+    
+    .cbi-button-success {
+        background-color: #5cb85c !important;
+        color: white !important;
+        border-color: #4cae4c !important;
+    }
+    
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #09f;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .hidden {
+        display: none;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    @media (max-width: 768px) {
+        .status-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .status-value {
+            text-align: left;
+            margin-top: 5px;
+        }
+    }
+    
+    /* Dark mode styles */
+    @media (prefers-color-scheme: dark) {
+        body {
+            background-color: #181818;
+            color: #f0f0f0;
+        }
+    
+        .status-card {
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+    
+        .status-card h3 {
+            color: #f0f0f0;
+            border-bottom: 1px solid #444;
+        }
+    
+        .status-label {
+            color: #f0f0f0;
+        }
+    
+        .status-value {
+            color: #dcdcdc;
+        }
+    
+        .control-buttons button {
+            background-color: #3e8e41;
+            border: 1px solid #5cb85c;
+        }
+    
+        .cbi-button-danger {
+            background-color: #c9302c;
+            border-color: #ac2925;
+        }
+    
+        .cbi-button-success {
+            background-color: #4cae4c;
+            border-color: #398439;
+        }
+    
+        .spinner {
+            border-left-color: #4b8f29;
+        }
+    
+        .log-actions button {
+            background-color: #d9534f;
+        }
+    
+        .alert-message {
+            background-color: #4cae4c;
+            border: 1px solid #398439;
+            color: #ffffff;
+        }
+    }
+    </style>
 
 <h2><%:UESTC Authentication%></h2>
 
@@ -87,14 +251,21 @@ body {
     
     // Handle start, stop, and clear_log actions via AJAX
     function handleAction(action) {
+        if(action !== 'clear_log'){
+            showLoading('status_loading');
+        }
+        var now = Date.now();
+        var url = '<%= luci.dispatcher.build_url("admin/services/uestc_authclient/actions/") %>' + action + '?_t=' + now;
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/" + action) %>', true);
+        xhr.open('GET', url, true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
-                    updateStatus(true);
                     if (action === 'clear_log') {
                         refreshLog(true); // Refresh logs after clearing
+                    }else{
+                        updateStatus(true);
+                        refreshLog(false);
                     }
                 } else {
                     alert('Error executing action: ' + action);
@@ -122,7 +293,7 @@ body {
         lastLogUpdate = now;
         
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/get_log")%>?_t=' + now, true);
+        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/actions/get_log")%>?_t=' + now, true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 logUpdatePending = false;
@@ -158,7 +329,7 @@ body {
         lastStatusUpdate = now;
         
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/status")%>?_t=' + now, true);
+        xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/uestc_authclient/actions/get_status")%>?_t=' + now, true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 isUpdating = false;
@@ -225,6 +396,21 @@ body {
         refreshLog(true);
         // Get Status initially
         updateStatus(true);
+
+        // Automatic periodic status/ log refresh
+        var statusInterval = setInterval(function() {
+            // Only update if more than 3s since last status update
+            if (Date.now() - lastStatusUpdate > 3000) {
+                updateStatus(false);
+            }
+        }, 2500);
+        
+        var logInterval = setInterval(function() {
+            // Only update if more than 2s since last log update
+            if (Date.now() - lastLogUpdate > 2000) {
+                refreshLog(false);
+            }
+        }, 2000);
     });
 </script>
 

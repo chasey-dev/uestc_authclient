@@ -16,11 +16,14 @@ sBasic.anonymous = true
 -- Enable on startup
 local o = sBasic:option(Flag, "enabled", translate("Enable on startup"))
 o.default = "0"
+o.rmempty = false
 o.description = translate("Check to run the service automatically at system startup.")
+
 
 -- Limited monitoring
 o = sBasic:option(Flag, "limited_monitoring", translate("Limited Monitoring"))
 o.default = "1"
+o.rmempty = false
 o.description = translate("Check to limit monitoring and reconnection attempts to within 10 minutes around the last login time.")
 
 
@@ -34,6 +37,7 @@ sAuth.anonymous = true
 -- Authentication method
 local ctype = sAuth:option(ListValue, "auth_type", translate("Authentication method"))
 ctype.default = "ct"
+ctype.rmempty = false
 ctype:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
 ctype:value("srun", translate("Srun authentication method (go-nd-portal)"))
 ctype.description = translate("Select the authentication method. New dormitories and teaching areas use the Srun authentication method.")
@@ -176,6 +180,7 @@ sSched.anonymous = true
 
 local oEn = sSched:option(Flag, "enabled", translate("Enable scheduled disconnection"))
 oEn.default = "1"
+oEn.rmempty = false
 oEn.description = translate("Check to disconnect the network during specified time periods.")
 
 local st = sSched:option(ListValue, "disconnect_start", translate("Disconnection start time (hour)"))

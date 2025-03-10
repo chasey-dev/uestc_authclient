@@ -17,20 +17,20 @@ function index()
         cbi("uestc_authclient"),
         _("Configuration"), 2).leaf = true
 
-    entry({"admin", "services", "uestc_authclient", "start"},
+    entry({"admin", "services", "uestc_authclient", "actions", "start"},
         call("action_start")).leaf = true
 
-    entry({"admin", "services", "uestc_authclient", "stop"},
+    entry({"admin", "services", "uestc_authclient", "actions", "stop"},
         call("action_stop")).leaf = true
         
-    entry({"admin", "services", "uestc_authclient", "clear_log"},
+    entry({"admin", "services", "uestc_authclient", "actions", "clear_log"},
         call("action_clear_log")).leaf = true        
 
-    entry({"admin", "services", "uestc_authclient", "get_log"},
+    entry({"admin", "services", "uestc_authclient", "actions", "get_log"},
         call("action_get_log")).leaf = true
         
-    entry({"admin", "services", "uestc_authclient", "status"},
-        call("action_status")).leaf = true
+    entry({"admin", "services", "uestc_authclient", "actions", "get_status"},
+        call("action_get_status")).leaf = true
 
 end
 
@@ -46,7 +46,7 @@ function action_get_log()
 end
 
 -- Function to get service status in JSON format for AJAX updates
-function action_status()
+function action_get_status()
     local sys = require "luci.sys"
     local uci = require "luci.model.uci".cursor()
     local http = require "luci.http"
