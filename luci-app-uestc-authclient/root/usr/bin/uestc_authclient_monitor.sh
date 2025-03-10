@@ -74,7 +74,7 @@ init_config() {
         log_message "$MSG_LIMITED_MONITORING_ENABLED"
         LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
         if [ -z "$LAST_LOGIN" ]; then
-            log_message "$MSG_MONITOR_WINDOW_ACTIVE (last login time unknown)"
+            log_printf "$MSG_MONITOR_WINDOW_ACTIVE %s" "($MSG_LAST_LOGIN_UNKNOWN)"
         fi
     else
         log_message "$MSG_LIMITED_MONITORING_DISABLED"

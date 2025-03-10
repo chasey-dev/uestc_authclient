@@ -28,6 +28,7 @@ init_i18n() {
         MSG_SERVICE_DISABLED="服务在配置中被禁用，不启动服务。"
         MSG_LIMITED_MONITORING_ENABLED="限时监控已启用。"
         MSG_LIMITED_MONITORING_DISABLED="限时监控已禁用。"
+        MSG_LAST_LOGIN_UNKNOWN="上次登录时间未知。"
         MSG_MONITOR_WINDOW_ACTIVE="当前处于监控时间窗口内，进行网络监控和重连。"
         MSG_MONITOR_WINDOW_INACTIVE="当前不在监控时间窗口内，暂停网络监控和重连。"
         
@@ -73,6 +74,7 @@ init_i18n() {
         MSG_SERVICE_DISABLED="Service is disabled in the configuration, not starting."
         MSG_LIMITED_MONITORING_ENABLED="Limited monitoring enabled."
         MSG_LIMITED_MONITORING_DISABLED="Limited monitoring disabled."
+        MSG_LAST_LOGIN_UNKNOWN="Last login time unknown."
         MSG_MONITOR_WINDOW_ACTIVE="Within monitoring time window, performing network monitoring and reconnection."
         MSG_MONITOR_WINDOW_INACTIVE="Outside monitoring time window, pausing network monitoring and reconnection."
         
