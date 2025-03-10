@@ -38,7 +38,8 @@ end
 function action_get_log()
     local fs = require "nixio.fs"
     local http = require "luci.http"
-    local log_content = fs.readfile("/tmp/uestc_authclient.log") or translate("No logs available")
+    local i18n = require "luci.i18n"
+    local log_content = fs.readfile("/tmp/uestc_authclient.log") or i18n.translate("No logs available")
 
     http.prepare_content("text/plain; charset=utf-8")
     http.header("Cache-Control", "no-cache")
@@ -77,7 +78,8 @@ function action_get_status()
     
     -- Get last login time
     local fs = require "nixio.fs"
-    local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or translate("None")
+    local i18n = require "luci.i18n"
+    local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or i18n.translate("None")
     
     -- Prepare JSON response
     local result = {
