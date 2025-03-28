@@ -98,16 +98,16 @@ handle_scheduled_disconnect() {
         if [ "$CURRENT_HOUR" -ge "$scheduled_disconnect_start" ] && [ "$CURRENT_HOUR" -lt "$scheduled_disconnect_end" ]; then
             if [ "$disconnect_done" -eq 0 ]; then
                 log_message "$MSG_DISCONNECT_TIME"
-                # Disable network interface using ifconfig
-                ifconfig $INTERFACE down
+                # Disable network interface using ifdown
+                ifdown "$INTERFACE" 2>/dev/null
                 disconnect_done=1
             fi
             return 1  # Signal to skip other operations
         else
             if [ "$disconnect_done" -eq 1 ]; then
                 log_message "$MSG_RECONNECT_TIME"
-                # Enable network interface using ifconfig
-                ifconfig $INTERFACE up
+                # Enable network interface using ifup
+                ifup "$INTERFACE" 2>/dev/null
                 disconnect_done=0
                 # Remove last login file to de-function limited monitoring
                 rm $LAST_LOGIN_FILE

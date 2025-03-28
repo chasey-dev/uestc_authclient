@@ -34,12 +34,12 @@ fi
 
 # Release DHCP
 log_printf "$MSG_RELEASE_DHCP" "$INTERFACE"
-ifconfig $INTERFACE down
+ifdown "$INTERFACE" 2>/dev/null
 sleep 1
 
 # Renew IP address
 log_printf "$MSG_RENEW_IP" "$INTERFACE"
-ifconfig $INTERFACE up
+ifup "$INTERFACE" 2>/dev/null
 
 # Wait for interface to obtain IP address
 MAX_WAIT=30
