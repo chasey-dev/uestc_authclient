@@ -1,6 +1,6 @@
 local sys   = require "luci.sys"
 local uci   = require "luci.model.uci".cursor()
-local net   = require "luci.model.network".init()
+local net  = require "luci.model.network".init()
 
 -- Create the Map referencing /etc/config/uestc_authclient
 local m = Map("uestc_authclient", translate("UESTC Authentication Client"),
@@ -138,16 +138,21 @@ oSrunHost:depends("auth_type", "srun")
 local sNet = m:section(NamedSection, "listening", "system", translate("Network Settings"))
 sNet.anonymous = true
 
-local oIf = sNet:option(ListValue, "interface", translate("Network interface"))
+local oIf = sNet:option(ListValue, "interface", translate("Interface"))
 oIf.default = "wan"
-oIf.description = translate("Select the network interface for authentication.")
+oIf.description = translate("Select the interface for authentication. (Linux Interface, Refers to device in Openwrt.)")
 
-local netlist = net:get_networks()
-for _, iface in ipairs(netlist) do
-    local name = iface:name()
-    if name and name ~= "loopback" then
-        oIf:value(name)
+local seen_devices = {}
+
+for _, iface in ipairs(net:get_interfaces()) do
+    local ifn = iface:name()
+    if ifn and ifn ~= "lo" then
+        seen_devices[ifn] = true
     end
+end
+
+for devname, _ in pairs(seen_devices) do
+    oIf:value(devname)
 end
 
 local oHb = sNet:option(DynamicList, "heartbeat_hosts", translate("Heartbeat hosts"))

@@ -64,10 +64,11 @@ function action_get_status()
     if is_running then
         -- Get the list of heartbeat hosts
         local heartbeat_hosts = uci:get_list("uestc_authclient", "listening", "heartbeat_hosts") or {"223.5.5.5", "119.29.29.29"}
+        local interface = uci:get("uestc_authclient", "listening", "interface")
         -- Check network connectivity
         network_status = "disconnected"
         for _, host in ipairs(heartbeat_hosts) do
-            if sys.call("ping -c 1 -W 1 " .. host .. " >/dev/null 2>&1") == 0 then
+            if sys.call("ping -I " .. interface .. " -c 1 -W 1 " .. host .. " >/dev/null 2>&1") == 0 then
                 network_status = "connected"
                 break
             end

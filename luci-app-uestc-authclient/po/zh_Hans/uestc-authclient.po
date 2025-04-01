@@ -152,11 +152,11 @@ msgstr "Srun 认证服务器地址"
 msgid "Srun authentication server address, modify according to your area."
 msgstr "Srun 认证服务器地址，根据您所在区域进行修改。"
 
-msgid "Network interface"
+msgid "Interface"
 msgstr "网络接口"
 
-msgid "Select the network interface for authentication."
-msgstr "选择用于认证的网络接口。"
+msgid "Select the interface for authentication. (Linux Interface, Refers to device in Openwrt.)"
+msgstr "选择用于认证的网络接口。（Linux接口 - Interface，在Openwrt中称作设备 - device）"
 
 msgid "Heartbeat hosts"
 msgstr "心跳检测地址"

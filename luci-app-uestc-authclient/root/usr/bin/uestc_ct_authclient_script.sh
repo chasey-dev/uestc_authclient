@@ -26,18 +26,18 @@ LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
 
 # Release DHCP
 log_printf "$MSG_RELEASE_DHCP" "$INTERFACE"
-ifconfig $INTERFACE down
-sleep 1
+ip link set dev "$INTERFACE" down
+sleep 5
 
 # Renew IP address
 log_printf "$MSG_RENEW_IP" "$INTERFACE"
-ifconfig $INTERFACE up
+ip link set dev "$INTERFACE" up
 
 # Wait for interface to obtain IP address
 MAX_WAIT=30
 COUNT=0
 while [ $COUNT -lt $MAX_WAIT ]; do
-    INTERFACE_IP=$(ifstatus $INTERFACE | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null)
+    INTERFACE_IP=$(ip addr show dev "$INTERFACE" | awk '/inet / {print $2}' | cut -d/ -f1)
     if [ -n "$INTERFACE_IP" ]; then
         log_printf "$MSG_GOT_IP" "$INTERFACE" "$INTERFACE_IP"
         break
