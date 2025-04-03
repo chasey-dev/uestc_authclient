@@ -121,5 +121,5 @@ function action_clear_log()
     sys.call("rm -rf /tmp/uestc_authclient_logs/*.log")
     
     -- Re-initialize the log file for today
-    sys.call(". /usr/lib/uestc_authclient/log_utils.sh && log_init")
+    sys.call(". /usr/lib/uestc_authclient/log_utils.sh")
 end

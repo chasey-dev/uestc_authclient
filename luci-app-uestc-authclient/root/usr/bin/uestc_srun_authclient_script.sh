@@ -6,9 +6,6 @@
 # Source the internationalization support
 . /usr/lib/uestc_authclient/i18n.sh
 
-# Initialize logging
-log_init "/tmp/uestc_authclient.log"
-
 # define srun authclient binary file to use
 SRUN_BIN="/usr/bin/go-nd-portal"
 
