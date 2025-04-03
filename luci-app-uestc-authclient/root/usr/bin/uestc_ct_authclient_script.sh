@@ -6,9 +6,6 @@
 # Source the internationalization support
 . /usr/lib/uestc_authclient/i18n.sh
 
-# Initialize logging
-log_init "/tmp/uestc_authclient.log"
-
 # define srun authclient binary file to use
 CT_BIN="/usr/bin/qsh-telecom-autologin"
 

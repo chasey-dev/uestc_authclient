@@ -29,9 +29,6 @@ init_config() {
     LOG_RETENTION_DAYS=$(uci get uestc_authclient.logging.retention_days 2>/dev/null)
     [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
 
-    # Initialize logging with the correct log directory
-    log_init
-
     # Limited monitoring
     LIMITED_MONITORING=$(uci get uestc_authclient.basic.limited_monitoring 2>/dev/null)
     [ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
