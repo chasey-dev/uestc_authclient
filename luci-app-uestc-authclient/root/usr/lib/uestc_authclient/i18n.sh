@@ -58,6 +58,8 @@ init_i18n() {
         MSG_LOG_INITIALIZED="日志初始化完成。日志文件创建于"
         MSG_LOG_ROTATION_COMPLETED="日志轮转完成。已保留 %s/%s 行记录（保留期限：%s 天）"
         MSG_LOG_FILE_CLEARED="日志文件已清空（保留期限：%s 天）"
+        MSG_NO_LOGS_AVAILABLE="没有可用的日志"
+        MSG_LOG_CLEANUP_COMPLETED="日志清理完成。已删除 %s/%s 个日志文件（保留期限：%s 天）"
     else
         # English message dictionary (default)
         MSG_UNKNOWN_CLIENT_TYPE="Unknown client type:"
@@ -101,9 +103,11 @@ init_i18n() {
         MSG_SRUN_USERNAME_PASSWORD_NOT_SET="Username or password for Srun authentication is not set, cannot login."
         
         # Logging messages
-        MSG_LOG_INITIALIZED="Logging initialized. Log file created at"
-        MSG_LOG_ROTATION_COMPLETED="Log rotation completed. Retained %s/%s lines (retention: %s days)"
-        MSG_LOG_FILE_CLEARED="Log file cleared (retention: %s days)"
+        MSG_LOG_INITIALIZED="Log initialized. Log file created at"
+        MSG_LOG_ROTATION_COMPLETED="Log rotation completed. Kept %s/%s lines (retention period: %s days)"
+        MSG_LOG_FILE_CLEARED="Log file cleared (retention period: %s days)"
+        MSG_NO_LOGS_AVAILABLE="No logs available"
+        MSG_LOG_CLEANUP_COMPLETED="Log cleanup completed. Deleted %s/%s log files (retention period: %s days)"
     fi
 }
 

@@ -12,7 +12,7 @@ USE_PROCD=1
 . /usr/lib/uestc_authclient/i18n.sh
 
 # Initialize logging
-log_init "/tmp/uestc_authclient.log"
+log_init
 
 boot() {
     enabled=$(uci get uestc_authclient.basic.enabled 2>/dev/null)
