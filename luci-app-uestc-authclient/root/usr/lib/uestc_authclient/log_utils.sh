@@ -7,26 +7,31 @@ if [ -z "$MSG_SERVICE_STARTED" ]; then
     . /usr/lib/uestc_authclient/i18n.sh
 fi
 
-# Default log file path
-LOG_FILE="/tmp/uestc_authclient.log"
+# Log directory path
+LOG_DIR="/tmp/uestc_authclient_logs"
+# Current log file path (generated daily)
+LOG_FILE=""
 # Last log cleanup timestamp file
 LOG_CLEANUP_TIMESTAMP_FILE="/tmp/uestc_authclient_last_cleanup"
 
 #######################################
 # Initialize logging
 # Arguments:
-#   $1 - (Optional) Custom log file path
+#   $1 - (Optional) Custom log directory path
 #######################################
 log_init() {
     if [ -n "$1" ]; then
-        LOG_FILE="$1"
+        LOG_DIR="$1"
     fi
     
     # Ensure log directory exists
-    local log_dir=$(dirname "$LOG_FILE")
-    if [ ! -d "$log_dir" ]; then
-        mkdir -p "$log_dir"
+    if [ ! -d "$LOG_DIR" ]; then
+        mkdir -p "$LOG_DIR"
     fi
+    
+    # Get current date for the log file name
+    local current_date=$(date +"%Y-%m-%d")
+    LOG_FILE="${LOG_DIR}/${current_date}.log"
     
     # Create log file if it doesn't exist
     if [ ! -f "$LOG_FILE" ]; then
@@ -36,12 +41,38 @@ log_init() {
 }
 
 #######################################
+# Get the current log file path, creating a new one if date changed
+#######################################
+get_current_log_file() {
+    # Get current date
+    local current_date=$(date +"%Y-%m-%d")
+    local current_log_file="${LOG_DIR}/${current_date}.log"
+    
+    # Check if we need to use a new log file (date changed)
+    if [ "$LOG_FILE" != "$current_log_file" ]; then
+        LOG_FILE="$current_log_file"
+        
+        # Create new log file if it doesn't exist
+        if [ ! -f "$LOG_FILE" ]; then
+            touch "$LOG_FILE"
+            echo "$(date): $MSG_LOG_INITIALIZED $LOG_FILE" >> "$LOG_FILE"
+        fi
+    fi
+    
+    echo "$LOG_FILE"
+}
+
+#######################################
 # Log a message to the log file with timestamp
 # Arguments:
 #   $1 - Message to log
 #######################################
 log_message() {
-    echo "$(date): $1" >> "$LOG_FILE"
+    # Get current log file
+    local current_log_file=$(get_current_log_file)
+    
+    # Log the message
+    echo "$(date): $1" >> "$current_log_file"
 }
 
 #######################################
@@ -118,8 +149,8 @@ log_clean() {
         return 1
     fi
     
-    # Check if log file exists
-    if [ ! -f "$LOG_FILE" ]; then
+    # Check if log directory exists
+    if [ ! -d "$LOG_DIR" ]; then
         return 0
     fi
 
@@ -127,42 +158,64 @@ log_clean() {
     local current_timestamp=$(date +%s)
     local retention_seconds=$((log_retention_days * 86400))
     local cutoff_timestamp=$((current_timestamp - retention_seconds))
+    local deleted_count=0
+    local total_count=0
     
-    # Create a temporary file for the filtered logs
-    local temp_log_file="${LOG_FILE}.tmp"
-    > "$temp_log_file"  # Ensure temporary file exists and is empty
-    
-    # Count of processed and retained lines for logging
-    local total_lines=0
-    local retained_lines=0
-    
-    while read -r line; do
-        total_lines=$((total_lines + 1))
+    # Process each log file in the directory
+    for log_file in "$LOG_DIR"/*.log; do
+        [ -f "$log_file" ] || continue
+        total_count=$((total_count + 1))
         
-        # Extract the date and time from the log line
-        local log_date=$(echo "$line" | awk '{print $1" "$2" "$3}')
-        local log_timestamp=$(date -d "$log_date" +%s 2>/dev/null)
+        # Extract date from filename (format: YYYY-MM-DD.log)
+        local file_date=$(basename "$log_file" .log)
+        local file_timestamp=$(date -d "$file_date" +%s 2>/dev/null)
         
-        if [ -z "$log_timestamp" ] || [ $log_timestamp -ge $cutoff_timestamp ]; then
-            # Keep line if timestamp can't be parsed or if it's within retention period
-            echo "$line" >> "$temp_log_file"
-            retained_lines=$((retained_lines + 1))
+        # If date parsing failed or file is older than retention period, delete it
+        if [ -n "$file_timestamp" ] && [ $file_timestamp -lt $cutoff_timestamp ]; then
+            rm -f "$log_file"
+            deleted_count=$((deleted_count + 1))
         fi
-    done < "$LOG_FILE"
+    done
     
-    # Check if temporary file exists and has content
-    if [ -s "$temp_log_file" ]; then
-        # Add a log rotation message using the localized message
-        echo "$(date): $(printf "$MSG_LOG_ROTATION_COMPLETED" "$retained_lines" "$total_lines" "$log_retention_days")" >> "$temp_log_file"
-        # Replace the old log with the new one
-        mv "$temp_log_file" "$LOG_FILE"
-    else
-        # Create empty log with header if no lines were retained
-        echo "$(date): $(printf "$MSG_LOG_FILE_CLEARED" "$log_retention_days")" > "$LOG_FILE"
-        rm -f "$temp_log_file"
+    # Log the cleanup results to the current log file
+    if [ $deleted_count -gt 0 ]; then
+        log_printf "$MSG_LOG_CLEANUP_COMPLETED" "$deleted_count" "$total_count" "$log_retention_days"
     fi
     
     return 0
+}
+
+#######################################
+# Get all log content in chronological order
+# Returns:
+#   All log content from all available log files
+#######################################
+get_all_logs() {
+    # Check if log directory exists
+    if [ ! -d "$LOG_DIR" ]; then
+        echo "$MSG_NO_LOGS_AVAILABLE"
+        return
+    fi
+    
+    # Find all log files and sort them by name (which is by date)
+    local log_files=$(find "$LOG_DIR" -name "*.log" | sort)
+    
+    # If no log files, return message
+    if [ -z "$log_files" ]; then
+        echo "$MSG_NO_LOGS_AVAILABLE"
+        return
+    fi
+    
+    # Output the content of all log files
+    for log_file in $log_files; do
+        # Get the date from the filename
+        local file_date=$(basename "$log_file" .log)
+        
+        # Add a header for each log file
+        echo "=== $file_date ==="
+        cat "$log_file"
+        echo "" # Add empty line between log files
+    done
 }
 
 # Auto-initialize logging when this script is sourced
