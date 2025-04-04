@@ -81,6 +81,7 @@ local oCTHost = sAuth:option(Value, "ct_host", translate("CT authentication host
 oCTHost.datatype = "host"
 oCTHost.default = "172.25.249.64"
 oCTHost.description = translate("CT authentication server address, usually no need to modify.")
+oCTHost.placeholder = "172.25.249.64"
 oCTHost:depends("auth_type", "ct")
 
 ----------------------[ Srun fields ]----------------------
@@ -129,6 +130,7 @@ local oSrunHost = sAuth:option(Value, "srun_host", translate("Srun authenticatio
 oSrunHost.datatype = "ipaddr"
 oSrunHost.default = "10.253.0.237"
 oSrunHost.description = translate("Srun authentication server address, modify according to your area.")
+oSrunHost.placeholder = "10.253.0.237"
 oSrunHost:depends("auth_type", "srun")
 
 
@@ -157,12 +159,14 @@ end
 
 local oHb = sNet:option(DynamicList, "heartbeat_hosts", translate("Heartbeat hosts"))
 oHb.datatype = "host"
+oHb.default = {"223.5.5.5", "119.29.29.29"}
 oHb.description = translate("Host addresses used to check network connectivity; you can add multiple addresses.")
 
 local oCheck = sNet:option(Value, "check_interval", translate("Check interval (seconds)"))
 oCheck.datatype = "uinteger"
 oCheck.default = "30"
 oCheck.description = translate("Time interval for checking network status, in seconds.")
+oCheck.placeholder = "30"
 
 
 ------------------------------------------------------------------------------
@@ -175,6 +179,7 @@ local oRet = sLog:option(Value, "retention_days", translate("Log retention days"
 oRet.datatype = "uinteger"
 oRet.default = "7"
 oRet.description = translate("Specify the number of days to retain log files; logs exceeding this period will be cleared.")
+oRet.placeholder = "7"
 
 
 ------------------------------------------------------------------------------
