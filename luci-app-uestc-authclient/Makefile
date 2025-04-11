@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-uestc-authclient
-PKG_VERSION:=2.3
-PKG_RELEASE:=3
+PKG_VERSION:=2.4
+PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI Support for UESTC Authentication Client
 LUCI_DESCRIPTION:=LuCI App to manage uestc_ct/srun_authclient and network monitoring.
-LUCI_DEPENDS:=+qsh-telecom-autologin +go-nd-portal +jsonfilter
+LUCI_DEPENDS:=+qsh-telecom-autologin +go-nd-portal
 
 include $(TOPDIR)/feeds/luci/luci.mk
 
