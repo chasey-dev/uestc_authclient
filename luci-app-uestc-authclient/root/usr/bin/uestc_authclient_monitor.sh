@@ -54,11 +54,24 @@ init_config() {
     disconnect_done=0  # Indicates if disconnection has been performed
     limited_monitoring_notice_flag=0  # Flag to prevent loop logging
     
-    # Select authentication script based on client type
+    # Use the new unified authentication script
+    AUTH_SCRIPT="/usr/bin/uestc_authclient_script.sh"
+    
+    # Get authentication parameters based on client type
     if [ "$AUTH_TYPE" = "ct" ]; then
-        AUTH_SCRIPT="/usr/bin/uestc_ct_authclient_script.sh"
+        USERNAME=$(uci get uestc_authclient.auth.ct_username 2>/dev/null)
+        PASSWORD=$(uci get uestc_authclient.auth.ct_password 2>/dev/null)
+        HOST=$(uci get uestc_authclient.auth.ct_host 2>/dev/null)
+        [ -z "$HOST" ] && HOST="172.25.249.64"
+        AUTH_PARAMS="-t ct -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD"
     elif [ "$AUTH_TYPE" = "srun" ]; then
-        AUTH_SCRIPT="/usr/bin/uestc_srun_authclient_script.sh"
+        USERNAME=$(uci get uestc_authclient.auth.srun_username 2>/dev/null)
+        PASSWORD=$(uci get uestc_authclient.auth.srun_password 2>/dev/null)
+        AUTH_MODE=$(uci get uestc_authclient.auth.srun_auth_mode 2>/dev/null)
+        [ -z "$AUTH_MODE" ] && AUTH_MODE="dx"
+        HOST=$(uci get uestc_authclient.auth.srun_host 2>/dev/null)
+        [ -z "$HOST" ] && HOST="10.253.0.237"
+        AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -m $AUTH_MODE"
     else
         log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$AUTH_TYPE"
         exit 1
@@ -192,7 +205,7 @@ check_network_connectivity() {
         log_printf "$MSG_NETWORK_UNREACHABLE" "$failure_count" "$MAX_FAILURES"
         if [ "$failure_count" -ge "$MAX_FAILURES" ]; then
             log_printf "$MSG_TRY_RELOGIN" "$MAX_FAILURES"
-            $AUTH_SCRIPT
+            $AUTH_SCRIPT $AUTH_PARAMS
             failure_count=0
         fi
         network_down=1

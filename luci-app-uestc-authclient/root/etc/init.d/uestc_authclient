@@ -28,6 +28,7 @@ start_service() {
     AUTH_TYPE=$(uci get uestc_authclient.auth.auth_type 2>/dev/null)
     [ -z "$AUTH_TYPE" ] && AUTH_TYPE="ct"
 
+    # Check for required username and password based on authentication type
     if [ "$AUTH_TYPE" = "ct" ]; then
         USERNAME=$(uci get uestc_authclient.auth.ct_username 2>/dev/null)
         PASSWORD=$(uci get uestc_authclient.auth.ct_password 2>/dev/null)
