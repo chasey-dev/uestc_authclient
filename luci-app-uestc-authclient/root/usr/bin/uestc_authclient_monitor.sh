@@ -51,6 +51,8 @@ init_config() {
     failure_count=0
     network_down=0  # Indicates if the network is down
     CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL  # Initialize network check interval
+    ORIGINAL_CHECK_INTERVAL=$CHECK_INTERVAL  # Store the original interval for reset
+    MAX_BACKOFF_INTERVAL=600  # Maximum backoff interval (10 minutes)
     disconnect_done=0  # Indicates if disconnection has been performed
     limited_monitoring_notice_flag=0  # Flag to prevent loop logging
     
@@ -121,6 +123,15 @@ handle_scheduled_disconnect() {
                 disconnect_done=0
                 # Remove last login file to de-function limited monitoring
                 rm $LAST_LOGIN_FILE
+                
+                # Reset backoff state after scheduled disconnect period
+                if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+                    log_message "$MSG_BACKOFF_RESET_AFTER_SCHEDULE"
+                    CURRENT_CHECK_INTERVAL=$ORIGINAL_CHECK_INTERVAL
+                fi
+                # Reset failure count and network status regardless of backoff state
+                failure_count=0
+                network_down=0
             fi
         fi
     fi
@@ -200,27 +211,98 @@ check_network_connectivity() {
         fi
     done
 
+    # Network is unreachable case
     if [ "$network_reachable" -eq 0 ]; then
         failure_count=$((failure_count + 1))
-        log_printf "$MSG_NETWORK_UNREACHABLE" "$failure_count" "$MAX_FAILURES"
-        if [ "$failure_count" -ge "$MAX_FAILURES" ]; then
-            log_printf "$MSG_TRY_RELOGIN" "$MAX_FAILURES"
-            $AUTH_SCRIPT $AUTH_PARAMS
-            failure_count=0
-        fi
         network_down=1
-        # Shorten check interval when network is down
-        CURRENT_CHECK_INTERVAL=$((CHECK_INTERVAL / 2))
+        
+        # Show appropriate message based on state
+        if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+            # In backoff mode
+            log_message "$MSG_NETWORK_UNREACHABLE_BACKOFF"
+        else
+            # Not in backoff mode yet
+            log_printf "$MSG_NETWORK_UNREACHABLE" "$failure_count" "$MAX_FAILURES"
+            
+            # Shorten check interval when network is down (before authentication)
+            if [ "$failure_count" -lt "$MAX_FAILURES" ]; then
+                CURRENT_CHECK_INTERVAL=$((CHECK_INTERVAL / 2))
+            fi
+        fi
+        
+        # Attempt authentication if needed
+        if [ "$failure_count" -ge "$MAX_FAILURES" ]; then
+            # Show appropriate message based on state
+            if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+                log_message "$MSG_TRY_RELOGIN_BACKOFF"
+            else
+                log_printf "$MSG_TRY_RELOGIN" "$MAX_FAILURES"
+            fi
+            
+            # Try to authenticate
+            $AUTH_SCRIPT $AUTH_PARAMS
+            
+            # Check if network is now reachable after authentication
+            network_reachable=0
+            for HOST in $HEARTBEAT_HOSTS; do
+                ping -I $INTERFACE -c 1 -W 1 -n $HOST >/dev/null 2>&1
+                if [ $? -eq 0 ]; then
+                    network_reachable=1
+                    break
+                fi
+            done
+            
+            if [ "$network_reachable" -eq 0 ]; then
+                # Auth failed to restore network
+                log_message "$MSG_AUTH_FAILED_NETWORK_STILL_DOWN"
+                
+                # Apply exponential backoff
+                CURRENT_CHECK_INTERVAL=$((CURRENT_CHECK_INTERVAL * 2))
+                
+                # Ensure we're definitely in backoff mode
+                if [ "$CURRENT_CHECK_INTERVAL" -le "$ORIGINAL_CHECK_INTERVAL" ]; then
+                    # This can happen on first backoff if we were at half interval
+                    CURRENT_CHECK_INTERVAL=$((ORIGINAL_CHECK_INTERVAL + 15))
+                fi
+                
+                # Ensure we don't exceed the maximum backoff interval
+                if [ "$CURRENT_CHECK_INTERVAL" -gt "$MAX_BACKOFF_INTERVAL" ]; then
+                    CURRENT_CHECK_INTERVAL=$MAX_BACKOFF_INTERVAL
+                fi
+                
+                log_printf "$MSG_BACKOFF_APPLIED" "$CURRENT_CHECK_INTERVAL"
+                
+                # Keep failure_count at MAX_FAILURES for next cycle
+                failure_count=$MAX_FAILURES
+            else
+                # Auth succeeded in restoring network
+                log_message "$MSG_NETWORK_REACHABLE"
+                
+                # Reset everything
+                if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+                    log_printf "$MSG_BACKOFF_RESET" "$ORIGINAL_CHECK_INTERVAL"
+                fi
+                CURRENT_CHECK_INTERVAL=$ORIGINAL_CHECK_INTERVAL
+                failure_count=0
+                network_down=0
+            fi
+        fi
     else
-        # Network is up
-        if [ "$failure_count" -ne 0 ] || [ "$network_down" -eq 1 ]; then
+        # Network is reachable case
+        if [ "$network_down" -eq 1 ]; then
+            # Only show recovery message if we were previously down
             log_message "$MSG_NETWORK_REACHABLE"
         fi
-        # Reset failure count
+        
+        # Only show backoff reset if we were in backoff mode
+        if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+            log_printf "$MSG_BACKOFF_RESET" "$ORIGINAL_CHECK_INTERVAL"
+        fi
+        
+        # Reset everything when network is up
+        CURRENT_CHECK_INTERVAL=$ORIGINAL_CHECK_INTERVAL
         failure_count=0
         network_down=0
-        # Use default check interval when network is up
-        CURRENT_CHECK_INTERVAL=$CHECK_INTERVAL
     fi
 }
 
@@ -247,11 +329,17 @@ main() {
             continue
         fi
 
-        # Check if we should run monitoring based on time window
-        check_limited_monitoring
-        if [ $? -eq 1 ]; then
-            sleep $CHECK_INTERVAL
-            continue
+        # Skip limited monitoring check when in backoff mode (network is down and we need to recover)
+        if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+            # We're in backoff mode, bypass limited monitoring
+            log_message "$MSG_LIMITED_MONITORING_BYPASSED"
+        else
+            # Check if we should run monitoring based on time window
+            check_limited_monitoring
+            if [ $? -eq 1 ]; then
+                sleep $CHECK_INTERVAL
+                continue
+            fi
         fi
 
         # Check if interface has IP
