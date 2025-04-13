@@ -82,7 +82,22 @@ function action_get_status()
     -- Get last login time
     local fs = require "nixio.fs"
     local i18n = require "luci.i18n"
-    local last_login = fs.readfile("/tmp/uestc_authclient_last_login") or i18n.translate("None")
+    local last_login_ts = fs.readfile("/tmp/uestc_authclient_last_login") or ""
+    
+    -- Format last login time for display
+    local last_login
+    if last_login_ts == "" then
+        last_login = i18n.translate("None")
+    else
+        -- Convert Unix timestamp to formatted date
+        last_login_ts = tonumber(last_login_ts)
+        if last_login_ts then
+            -- Use Lua os.date to format the timestamp 
+            last_login = os.date("%Y-%m-%d %H:%M:%S", last_login_ts)
+        else
+            last_login = i18n.translate("Invalid format")
+        end
+    end
     
     -- Prepare JSON response
     local result = {

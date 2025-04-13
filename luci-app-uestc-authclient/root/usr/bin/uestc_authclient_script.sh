@@ -133,8 +133,8 @@ done
 
 # Check if login was successful
 if [ "$LOGIN_SUCCESS" = "1" ]; then
-    # Login successful, record login time
-    date "+%Y-%m-%d %H:%M:%S" > $LAST_LOGIN_FILE
+    # Login successful, record login time as Unix timestamp
+    date +%s > $LAST_LOGIN_FILE
     log_message "$SUCCESS_MSG"
 else
     log_message "$FAILURE_MSG"

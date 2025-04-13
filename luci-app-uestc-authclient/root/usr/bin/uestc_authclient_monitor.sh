@@ -142,47 +142,51 @@ handle_scheduled_disconnect() {
 # Check if current time is within monitoring window
 #######################################
 check_limited_monitoring() {
-    if [ "$LIMITED_MONITORING" -eq 1 ]; then
-        LAST_LOGIN=$(cat $LAST_LOGIN_FILE 2>/dev/null)
-        # Convert last login time to seconds since epoch
-        if [ -n "$LAST_LOGIN" ]; then
-            # Extract time (hours and minutes) from last login time
-            LOGIN_HOUR=$(date -d "$LAST_LOGIN" -D "%Y-%m-%d %H:%M:%S" +%H)
-            LOGIN_MIN=$(date -d "$LAST_LOGIN" -D "%Y-%m-%d %H:%M:%S" +%M)
-
-            # Convert times to minutes since midnight
-            LOGIN_TOTAL_MIN=$(expr "$LOGIN_HOUR" \* 60 + "$LOGIN_MIN")
-            
-            # Current time
-            CURRENT_HOUR=$(date +%H)
-            CURRENT_MIN=$(date +%M)
-            # Calculate difference
-            CURRENT_TOTAL_MIN=$(expr "$CURRENT_HOUR" \* 60 + "$CURRENT_MIN")
-            
-            # Adjust for day wrap-around
-            DIFF_MIN=$(expr "$CURRENT_TOTAL_MIN" - "$LOGIN_TOTAL_MIN")
-            if [ $DIFF_MIN -lt -720 ]; then  # More than 12 hours behind
-                DIFF_MIN=$((DIFF_MIN + 1440)) # Add 24 hours
-            elif [ $DIFF_MIN -gt 720 ]; then # More than 12 hours ahead
-                DIFF_MIN=$((DIFF_MIN - 1440)) # Subtract 24 hours
-            fi
-            
-            # Check if within the monitor window
-            if [ $DIFF_MIN -lt -10 ] || [ $DIFF_MIN -gt 10 ]; then
-                if [ "$limited_monitoring_notice_flag" -ne 1 ]; then
-                    log_message "$MSG_MONITOR_WINDOW_INACTIVE"
-                    limited_monitoring_notice_flag=1
-                fi
-                return 1  # Signal to skip network check
-            else
-                if [ "$limited_monitoring_notice_flag" -eq 1 ]; then
-                    log_message "$MSG_MONITOR_WINDOW_ACTIVE"
-                    limited_monitoring_notice_flag=0
-                fi
-            fi
-        fi
+    # If in backoff mode, bypass limited monitoring
+    if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
+        # We're in backoff mode, bypass limited monitoring
+        log_message "$MSG_LIMITED_MONITORING_BYPASSED"
+        return 0  # Signal to continue with network check
     fi
-    return 0  # Signal to continue with network check
+
+    if [ "$LIMITED_MONITORING" -ne 1 ]; then
+        # Limited monitoring disabled, always monitor
+        return 0
+    fi
+    
+    # Get last login timestamp
+    LAST_LOGIN_TS=$(cat $LAST_LOGIN_FILE 2>/dev/null)
+    if [ -z "$LAST_LOGIN_TS" ]; then
+        # No last login time, assume we should monitor
+        if [ "$limited_monitoring_notice_flag" -ne 2 ]; then
+            log_printf "$MSG_MONITOR_WINDOW_ACTIVE %s" "($MSG_LAST_LOGIN_UNKNOWN)"
+            limited_monitoring_notice_flag=2
+        fi
+        return 0
+    fi
+    
+    # Get current timestamp and calculate difference
+    CURRENT_TS=$(date +%s)
+    TIME_DIFF=$((CURRENT_TS - LAST_LOGIN_TS))
+    # Take absolute value of time difference
+    TIME_DIFF_ABS=${TIME_DIFF#-}
+    
+    # Check if within 10 minutes (600 seconds) window
+    if [ "$TIME_DIFF_ABS" -le 600 ]; then
+        # Within ±10 minutes
+        if [ "$limited_monitoring_notice_flag" -ne 0 ]; then
+            log_message "$MSG_MONITOR_WINDOW_ACTIVE"
+            limited_monitoring_notice_flag=0
+        fi
+        return 0
+    else
+        # Outside monitoring window
+        if [ "$limited_monitoring_notice_flag" -ne 1 ]; then
+            log_message "$MSG_MONITOR_WINDOW_INACTIVE"
+            limited_monitoring_notice_flag=1
+        fi
+        return 1  # Signal to skip network check
+    fi
 }
 
 #######################################
@@ -329,17 +333,11 @@ main() {
             continue
         fi
 
-        # Skip limited monitoring check when in backoff mode (network is down and we need to recover)
-        if [ "$CURRENT_CHECK_INTERVAL" -gt "$ORIGINAL_CHECK_INTERVAL" ]; then
-            # We're in backoff mode, bypass limited monitoring
-            log_message "$MSG_LIMITED_MONITORING_BYPASSED"
-        else
-            # Check if we should run monitoring based on time window
-            check_limited_monitoring
-            if [ $? -eq 1 ]; then
-                sleep $CHECK_INTERVAL
-                continue
-            fi
+        # Check if we should run monitoring based on time window
+        check_limited_monitoring
+        if [ $? -eq 1 ]; then
+            sleep $CHECK_INTERVAL
+            continue
         fi
 
         # Check if interface has IP
