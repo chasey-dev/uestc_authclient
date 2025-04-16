@@ -1,0 +1,97 @@
+diff --git a/main.go b/main.go
+index 355647c..b0fdb41 100644
+--- a/main.go
++++ b/main.go
+@@ -14,6 +14,7 @@ import (
+ 	"path/filepath"
+ 	"strings"
+ 	"time"
++	"syscall"
+ 
+ 	log "github.com/sirupsen/logrus"
+ )
+@@ -63,6 +64,60 @@ func (c *loginClient) Post(urlString string, body io.Reader) *http.Response {
+ 	return c.Do(req)
+ }
+ 
++// find interface by IP
++func findInterfaceByIP(ip net.IP) (*net.Interface) {
++	// log.Infof("request ip: %s", ip)
++	ifaces, err := net.Interfaces()
++	if err != nil {
++		log.Panic("get interface list failed: ", err)
++	}
++	for _, iface := range ifaces {
++		addrs, err := iface.Addrs()
++		if err != nil {
++			continue
++		}
++		for _, addr := range addrs {
++			var ipNet *net.IPNet
++			var addrIP net.IP
++			switch v := addr.(type) {
++			case *net.IPNet:
++				ipNet = v
++				addrIP = v.IP
++			case *net.IPAddr:
++				ipNet = &net.IPNet{IP: v.IP, Mask: v.IP.DefaultMask()}
++				addrIP = v.IP
++			}
++			if ipNet != nil && addrIP.Equal(ip) {
++				// log.Infof("ip bound to iface %s",iface)
++				return &iface
++			}
++		}
++	}
++
++	log.Panicf("IP %s doesnt belong to any interface", ip.String())
++	return nil
++}
++
++// dialerWithInterface returns a net.Dialer，which binds socket to specified interface when establishing connection
++// linux only
++func dialerWithInterface(iface string) *net.Dialer {
++	return &net.Dialer{
++		Timeout: 30 * time.Second,
++		KeepAlive: 30 * time.Second,
++		Control: func(network, address string, c syscall.RawConn) error {
++			var controlErr error
++			// set SO_BINDTODEVICE for Control to bind to specified interface after socket is initialized
++			err := c.Control(func(fd uintptr) {
++				controlErr = syscall.SetsockoptString(int(fd), syscall.SOL_SOCKET, syscall.SO_BINDTODEVICE, iface)
++			})
++			if err != nil {
++				log.Panic("Unexpected exception: ", err)
++			}
++			return controlErr
++		},
++	}
++}
++
+ func (c *loginClient) Do(req *http.Request) *http.Response {
+ 	var dialContext func(ctx context.Context, network, addr string) (net.Conn, error)
+ 
+@@ -71,18 +126,12 @@ func (c *loginClient) Do(req *http.Request) *http.Response {
+ 		if localIP == nil {
+ 			log.Fatalf("Invalid local IP: %s", c.localIP)
+ 		}
++		
++		iface := findInterfaceByIP(localIP)
+ 
+-		dialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+-			localAddr := &net.TCPAddr{
+-				IP: localIP,
+-			}
+-			d := net.Dialer{
+-				LocalAddr: localAddr,
+-				Timeout:   30 * time.Second,
+-				KeepAlive: 30 * time.Second,
+-			}
+-			return d.DialContext(ctx, network, addr)
+-		}
++		dialer := dialerWithInterface(iface.Name)
++		dialContext = dialer.DialContext
++		
+ 	} else {
+ 		dialer := &net.Dialer{
+ 			Timeout:   30 * time.Second,
