@@ -21,10 +21,8 @@ init_i18n() {
         MSG_MONITOR_SCRIPT_STARTED="监控脚本已启动。"
         MSG_NETWORK_REACHABLE="网络已恢复正常。"
         MSG_NETWORK_UNREACHABLE="网络连通性检查失败 (%s/%s)"
-        MSG_NETWORK_UNREACHABLE_BACKOFF="网络连通性检查失败（退避模式中）"
         MSG_TRY_RELOGIN="连续 %s 次网络不可达，尝试重新登录..."
         MSG_TRY_RELOGIN_BACKOFF="退避模式中，再次尝试重新登录..."
-        MSG_INTERFACE_NO_IP="接口 %s 没有获取到IP地址，等待下一次检查。"
         MSG_DISCONNECT_TIME="达到计划断网时间，断开网络连接。"
         MSG_RECONNECT_TIME="计划断网时间结束，恢复网络连接。"
         MSG_SERVICE_DISABLED="服务在配置中被禁用，不启动服务。"
@@ -33,11 +31,14 @@ init_i18n() {
         MSG_LAST_LOGIN_UNKNOWN="上次登录时间未知。"
         MSG_MONITOR_WINDOW_ACTIVE="当前处于监控时间窗口内，进行网络监控和重连。"
         MSG_MONITOR_WINDOW_INACTIVE="当前不在监控时间窗口内，暂停网络监控和重连。"
-        
+        MSG_INTERFACE_NO_IP="接口 %s 没有获取到IP地址，退出限时监控。"
+
         # Backoff mechanism messages
         MSG_BACKOFF_APPLIED="应用退避策略，将检测间隔增加到 %s 秒。"
         MSG_BACKOFF_RESET="网络已恢复，重置检测间隔为 %s 秒。"
-        MSG_BACKOFF_RESET_AFTER_SCHEDULE="计划断网结束，重置退避状态。"
+        MSG_BACKOFF_RESET_AFTER_SCHEDULE="达到计划断网时间，重置退避状态。"
+        MSG_BACKOFF_DISCONNECT="进入退避模式，断开网络连接。"
+        MSG_BACKOFF_RECONNECT="退避间隔结束，恢复网络连接。"
         MSG_LIMITED_MONITORING_BYPASSED="正处于退避模式，忽略限时监控。"
         MSG_AUTH_FAILED_NETWORK_STILL_DOWN="认证尝试后网络仍不可达。"
         
@@ -78,10 +79,8 @@ init_i18n() {
         MSG_MONITOR_SCRIPT_STARTED="Monitor script started."
         MSG_NETWORK_REACHABLE="Network has recovered."
         MSG_NETWORK_UNREACHABLE="Network connectivity check failed (%s/%s)"
-        MSG_NETWORK_UNREACHABLE_BACKOFF="Network connectivity check failed (in backoff mode)"
         MSG_TRY_RELOGIN="Network unreachable for %s times, attempting to re-login..."
         MSG_TRY_RELOGIN_BACKOFF="Backoff mode, attempting to re-login again..."
-        MSG_INTERFACE_NO_IP="Interface %s has no IP address, waiting for the next check."
         MSG_DISCONNECT_TIME="Reached scheduled disconnect time, disconnecting network."
         MSG_RECONNECT_TIME="Scheduled disconnect time ended, restoring network connection."
         MSG_SERVICE_DISABLED="Service is disabled in the configuration, not starting."
@@ -90,11 +89,14 @@ init_i18n() {
         MSG_LAST_LOGIN_UNKNOWN="Last login time unknown."
         MSG_MONITOR_WINDOW_ACTIVE="Within monitoring time window, performing network monitoring and reconnection."
         MSG_MONITOR_WINDOW_INACTIVE="Outside monitoring time window, pausing network monitoring and reconnection."
-        
+        MSG_INTERFACE_NO_IP="Interface %s has no IP address, exiting limited monitoring."
+
         # Backoff mechanism messages
         MSG_BACKOFF_APPLIED="Applied backoff policy, increased check interval to %s seconds."
         MSG_BACKOFF_RESET="Network recovered, reset check interval to %s seconds."
-        MSG_BACKOFF_RESET_AFTER_SCHEDULE="Scheduled disconnect ended, resetting backoff state."
+        MSG_BACKOFF_RESET_AFTER_SCHEDULE="Reached scheduled disconnect time, resetting backoff state."
+        MSG_BACKOFF_DISCONNECT="Entering backoff mode, disconnecting network."
+        MSG_BACKOFF_RECONNECT="Backoff period ended, restoring network connection."
         MSG_LIMITED_MONITORING_BYPASSED="In backoff mode, bypassing limited monitoring."
         MSG_AUTH_FAILED_NETWORK_STILL_DOWN="Network still unreachable after authentication attempt."
         
