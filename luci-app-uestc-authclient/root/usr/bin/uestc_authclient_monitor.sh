@@ -44,7 +44,7 @@ init_config() {
     [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
 
     # Define files and variables
-    LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
+    LAST_LOGIN_FILE="/tmp/uestc_authclient/last_login"
     
     # Define maximum consecutive failures
     MAX_FAILURES=3  # Maximum failure count
@@ -93,6 +93,82 @@ init_config() {
     else
         log_message "$MSG_LIMITED_MONITORING_DISABLED"
     fi
+}
+
+#######################################
+# Handle authentication process, capture output and update last login file
+# Arguments:
+#   $1 - Authentication parameters to pass to the auth script
+# Returns:
+#   0 if authentication was successful, 1 otherwise
+#######################################
+handle_auth() {
+    local auth_params="$1"
+    
+    # Get the client type
+    local client_type=$AUTH_TYPE
+    
+    case "$client_type" in
+        "ct")
+            log_message "$MSG_CT_EXECUTE_LOGIN"
+            ;;
+        "srun")
+            log_message "$MSG_SRUN_EXECUTE_LOGIN"
+            ;;
+    esac
+    
+    # Execute the auth script and capture output
+    local auth_output=$($AUTH_SCRIPT $auth_params 2>&1)
+    local auth_exit_code=$?
+    
+    # Handle based on exit code
+    case "$auth_exit_code" in
+        0|3)  # Success or authentication failure - log the output
+            # Write login output to log - one line at a time to avoid very long messages
+            echo "$auth_output" | while read -r line; do
+                if [ -n "$line" ]; then
+                    log_printf "$MSG_LOGIN_OUTPUT" "$line"
+                fi
+            done
+            
+            if [ "$auth_exit_code" -eq 0 ]; then
+                # Login successful, record login time as Unix timestamp
+                mkdir -p "$(dirname "$LAST_LOGIN_FILE")" 2>/dev/null
+                date +%s > $LAST_LOGIN_FILE
+                
+                case "$client_type" in
+                    "ct")
+                        log_message "$MSG_CT_LOGIN_SUCCESS"
+                        ;;
+                    "srun")
+                        log_message "$MSG_SRUN_LOGIN_SUCCESS"
+                        ;;
+                esac
+                return 0
+            else
+                case "$client_type" in
+                    "ct")
+                        log_message "$MSG_CT_LOGIN_FAILURE"
+                        ;;
+                    "srun")
+                        log_message "$MSG_SRUN_LOGIN_FAILURE"
+                        ;;
+                esac
+                return 1
+            fi
+            ;;
+            
+        1)  # Usage error or unknown client type
+            log_message "$MSG_AUTH_PARAM_ERROR"
+            return 1
+            ;;
+            
+        2)  # Network error - couldn't get IP
+            log_message "$MSG_AUTH_NETWORK_ERROR"
+            return 1
+            ;;
+    esac
+
 }
 
 #######################################
@@ -390,7 +466,7 @@ check_network_connectivity() {
             fi
             
             # Try to authenticate
-            $AUTH_SCRIPT $AUTH_PARAMS
+            handle_auth "$AUTH_PARAMS"
 
             # Should reset since AUTH_SCRIPT will make the network interface up
             interface_is_down=0

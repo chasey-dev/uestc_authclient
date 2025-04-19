@@ -1,11 +1,5 @@
 #!/bin/sh
 
-# Source the shared logging utility functions
-. /usr/lib/uestc_authclient/log_utils.sh
-
-# Source the internationalization support
-. /usr/lib/uestc_authclient/i18n.sh
-
 # Usage function to display help message
 usage() {
     echo "Usage: $0 -t <client_type> -i <interface> -s <server> -u <username> -p <password> [-m <auth_mode>]"
@@ -41,7 +35,7 @@ done
 
 # Check required parameters
 if [ -z "$CLIENT_TYPE" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ] || [ -z "$HOST" ]; then
-    log_message "$MSG_USERNAME_PASSWORD_NOT_SET"
+    echo "ERROR: Required parameters not set"
     usage
 fi
 
@@ -51,19 +45,15 @@ if [ "$CLIENT_TYPE" = "ct" ]; then
 elif [ "$CLIENT_TYPE" = "srun" ]; then
     AUTH_BIN="/usr/bin/go-nd-portal"
 else
-    log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$CLIENT_TYPE"
+    echo "ERROR: Unknown client type: $CLIENT_TYPE"
     exit 1
 fi
 
-LAST_LOGIN_FILE="/tmp/uestc_authclient_last_login"
-
 # Release DHCP
-log_printf "$MSG_RELEASE_DHCP" "$INTERFACE"
 ip link set dev "$INTERFACE" down
 sleep 5
 
 # Renew IP address
-log_printf "$MSG_RENEW_IP" "$INTERFACE"
 ip link set dev "$INTERFACE" up
 
 # Wait for interface to obtain IP address
@@ -72,7 +62,6 @@ COUNT=0
 while [ $COUNT -lt $MAX_WAIT ]; do
     INTERFACE_IP=$(ip addr show dev "$INTERFACE" | awk '/inet / {print $2}' | cut -d/ -f1)
     if [ -n "$INTERFACE_IP" ]; then
-        log_printf "$MSG_GOT_IP" "$INTERFACE" "$INTERFACE_IP"
         break
     fi
     sleep 1
@@ -80,25 +69,20 @@ while [ $COUNT -lt $MAX_WAIT ]; do
 done
 
 if [ -z "$INTERFACE_IP" ]; then
-    log_printf "$MSG_WAIT_IP_TIMEOUT" "$MAX_WAIT" "$INTERFACE"
-    exit 1
+    echo "ERROR: Failed to get IP address for interface $INTERFACE after $MAX_WAIT seconds"
+    exit 2
 fi
 
 # Execute login based on client type
 if [ "$CLIENT_TYPE" = "ct" ]; then
-    log_message "$MSG_CT_EXECUTE_LOGIN"
     LOGIN_OUTPUT=$($AUTH_BIN \
         -name "$USERNAME" -passwd "$PASSWORD" -host "$HOST" -localip "$INTERFACE_IP" 2>&1)
     
     # Check CT login success
     if echo "$LOGIN_OUTPUT" | grep -q "Successfully"; then
-        LOGIN_SUCCESS=1
-        SUCCESS_MSG="$MSG_CT_LOGIN_SUCCESS"
-        FAILURE_MSG="$MSG_CT_LOGIN_FAILURE"
+        RETURN_CODE=0  # Exit code 0 means success
     else
-        LOGIN_SUCCESS=0
-        SUCCESS_MSG="$MSG_CT_LOGIN_SUCCESS"
-        FAILURE_MSG="$MSG_CT_LOGIN_FAILURE"
+        RETURN_CODE=3  # Exit code 3 means authentication failure
     fi
 elif [ "$CLIENT_TYPE" = "srun" ]; then
     # Set parameters based on AUTH_MODE
@@ -108,34 +92,19 @@ elif [ "$CLIENT_TYPE" = "srun" ]; then
         MODE_FLAG=""
     fi
     
-    log_message "$MSG_SRUN_EXECUTE_LOGIN"
     LOGIN_OUTPUT=$($AUTH_BIN \
         -ip "$INTERFACE_IP" -n "$USERNAME" -p "$PASSWORD" $MODE_FLAG -d 2>&1)
     
     # Check Srun login success
     if echo "$LOGIN_OUTPUT" | grep -q "success"; then
-        LOGIN_SUCCESS=1
-        SUCCESS_MSG="$MSG_SRUN_LOGIN_SUCCESS"
-        FAILURE_MSG="$MSG_SRUN_LOGIN_FAILURE"
+        RETURN_CODE=0  # Exit code 0 means success
     else
-        LOGIN_SUCCESS=0
-        SUCCESS_MSG="$MSG_SRUN_LOGIN_SUCCESS"
-        FAILURE_MSG="$MSG_SRUN_LOGIN_FAILURE"
+        RETURN_CODE=3  # Exit code 3 means authentication failure
     fi
 fi
 
-# Write login output to log - one line at a time to avoid very long messages
-echo "$LOGIN_OUTPUT" | while read -r line; do
-    if [ -n "$line" ]; then
-        log_printf "$MSG_LOGIN_OUTPUT" "$line"
-    fi
-done
+# Output the login result for the caller to process
+echo "$LOGIN_OUTPUT"
 
-# Check if login was successful
-if [ "$LOGIN_SUCCESS" = "1" ]; then
-    # Login successful, record login time as Unix timestamp
-    date +%s > $LAST_LOGIN_FILE
-    log_message "$SUCCESS_MSG"
-else
-    log_message "$FAILURE_MSG"
-fi
+# Return the login status
+exit $RETURN_CODE
