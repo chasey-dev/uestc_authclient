@@ -111,9 +111,10 @@ handle_auth() {
     log_printf "$MSG_EXECUTE_LOGIN" "$AUTH_TYPE"
     
     # Execute the auth script and capture output
-    local auth_output=$($AUTH_SCRIPT $auth_params 2>&1)
-    local auth_exit_code=$?
-    
+    local auth_output auth_exit_code
+    auth_output=$($AUTH_SCRIPT $auth_params 2>&1)
+    auth_exit_code=$?
+
     # Handle based on exit code
     case "$auth_exit_code" in
         0|3)  
@@ -143,7 +144,7 @@ handle_auth() {
             
         2)  
             # Network error - couldn't get IP
-            log_printf "$MSG_WAIT_IP_TIMEOUT" "$MAX_WAIT"
+            log_printf "$MSG_WAIT_IP_TIMEOUT" "$MAX_WAIT" "$INTERFACE"
             return 1
             ;;
     esac
