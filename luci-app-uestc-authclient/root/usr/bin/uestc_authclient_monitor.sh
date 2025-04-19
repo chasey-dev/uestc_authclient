@@ -64,14 +64,14 @@ init_config() {
     
     # Use the new unified authentication script
     AUTH_SCRIPT="/usr/bin/uestc_authclient_script.sh"
-    
+    MAX_WAIT=30
     # Get authentication parameters based on client type
     if [ "$AUTH_TYPE" = "ct" ]; then
         USERNAME=$(uci get uestc_authclient.auth.ct_username 2>/dev/null)
         PASSWORD=$(uci get uestc_authclient.auth.ct_password 2>/dev/null)
         HOST=$(uci get uestc_authclient.auth.ct_host 2>/dev/null)
         [ -z "$HOST" ] && HOST="172.25.249.64"
-        AUTH_PARAMS="-t ct -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD"
+        AUTH_PARAMS="-t ct -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -w $MAX_WAIT"
     elif [ "$AUTH_TYPE" = "srun" ]; then
         USERNAME=$(uci get uestc_authclient.auth.srun_username 2>/dev/null)
         PASSWORD=$(uci get uestc_authclient.auth.srun_password 2>/dev/null)
@@ -79,7 +79,7 @@ init_config() {
         [ -z "$AUTH_MODE" ] && AUTH_MODE="dx"
         HOST=$(uci get uestc_authclient.auth.srun_host 2>/dev/null)
         [ -z "$HOST" ] && HOST="10.253.0.237"
-        AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -m $AUTH_MODE"
+        AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -m $AUTH_MODE -w $MAX_WAIT"
     else
         log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$AUTH_TYPE"
         exit 1
@@ -107,18 +107,8 @@ init_config() {
 #######################################
 handle_auth() {
     local auth_params="$1"
-    
-    # Get the client type
-    local client_type=$AUTH_TYPE
-    
-    case "$client_type" in
-        "ct")
-            log_message "$MSG_CT_EXECUTE_LOGIN"
-            ;;
-        "srun")
-            log_message "$MSG_SRUN_EXECUTE_LOGIN"
-            ;;
-    esac
+
+    log_printf "$MSG_EXECUTE_LOGIN" "$AUTH_TYPE"
     
     # Execute the auth script and capture output
     local auth_output=$($AUTH_SCRIPT $auth_params 2>&1)
@@ -126,7 +116,8 @@ handle_auth() {
     
     # Handle based on exit code
     case "$auth_exit_code" in
-        0|3)  # Success or authentication failure - log the output
+        0|3)  
+            # Success or authentication failure - log the output
             # Write login output to log - one line at a time to avoid very long messages
             echo "$auth_output" | while read -r line; do
                 if [ -n "$line" ]; then
@@ -138,36 +129,21 @@ handle_auth() {
                 # Login successful, record login time as Unix timestamp
                 mkdir -p "$(dirname "$LAST_LOGIN_FILE")" 2>/dev/null
                 date +%s > $LAST_LOGIN_FILE
-                
-                case "$client_type" in
-                    "ct")
-                        log_message "$MSG_CT_LOGIN_SUCCESS"
-                        ;;
-                    "srun")
-                        log_message "$MSG_SRUN_LOGIN_SUCCESS"
-                        ;;
-                esac
-                return 0
+                log_printf "$MSG_LOGIN_SUCCESS" "$AUTH_TYPE"
             else
-                case "$client_type" in
-                    "ct")
-                        log_message "$MSG_CT_LOGIN_FAILURE"
-                        ;;
-                    "srun")
-                        log_message "$MSG_SRUN_LOGIN_FAILURE"
-                        ;;
-                esac
-                return 1
+                log_printf "$MSG_LOGIN_FAILURE" "$AUTH_TYPE"
             fi
             ;;
             
-        1)  # Usage error or unknown client type
+        1)  
+            # Usage error or unknown client type
             log_message "$MSG_AUTH_PARAM_ERROR"
             return 1
             ;;
             
-        2)  # Network error - couldn't get IP
-            log_message "$MSG_AUTH_NETWORK_ERROR"
+        2)  
+            # Network error - couldn't get IP
+            log_printf "$MSG_WAIT_IP_TIMEOUT" "$MAX_WAIT"
             return 1
             ;;
     esac

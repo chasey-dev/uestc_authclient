@@ -51,22 +51,14 @@ init_i18n() {
         MSG_RENEW_IP="重新获取接口 %s 的 IP 地址..."
         MSG_GOT_IP="接口 %s 已获取到 IP 地址：%s"
         MSG_WAIT_IP_TIMEOUT="等待 %s 秒后，接口 %s 仍未获取到 IP 地址，放弃登录。"
+        MSG_EXECUTE_LOGIN="执行 %s 方式登录程序..."
+        MSG_LOGIN_SUCCESS="%s 方式登录成功，更新上次登录时间。"
+        MSG_LOGIN_FAILURE="%s 方式登录失败，未更新上次登录时间。"
         MSG_LOGIN_OUTPUT="登录输出：%s"
-        
-        # CT auth client specific messages
-        MSG_CT_EXECUTE_LOGIN="执行电信登录程序..."
-        MSG_CT_LOGIN_SUCCESS="登录成功，更新上次登录时间。"
-        MSG_CT_LOGIN_FAILURE="登录失败，未更新上次登录时间。"
-        
-        # Srun auth client specific messages
-        MSG_SRUN_EXECUTE_LOGIN="执行 Srun 认证方式登录程序..."
-        MSG_SRUN_LOGIN_SUCCESS="Srun 认证方式登录成功，更新上次登录时间。"
-        MSG_SRUN_LOGIN_FAILURE="Srun 认证方式登录失败，未更新上次登录时间。"
-        MSG_SRUN_USERNAME_PASSWORD_NOT_SET="Srun 认证方式的用户名或密码未设置，无法登录。"
-        
+        MSG_AUTH_PARAM_ERROR="认证脚本传入参数错误，放弃登录。"
+
         # Logging messages
         MSG_LOG_INITIALIZED="日志初始化完成。日志文件创建于"
-        MSG_LOG_ROTATION_COMPLETED="日志轮转完成。已保留 %s/%s 行记录（保留期限：%s 天）"
         MSG_LOG_FILE_CLEARED="日志文件已清空（保留期限：%s 天）"
         MSG_NO_LOGS_AVAILABLE="没有可用的日志"
         MSG_LOG_CLEANUP_COMPLETED="日志清理完成。已删除 %s/%s 个日志文件（保留期限：%s 天）"
@@ -104,27 +96,19 @@ init_i18n() {
         MSG_SERVICE_STARTED="Service started."
         MSG_SERVICE_STOPPED="Service stopped."
         
-        # Auth client common messages
+        # Auth client messages
         MSG_RELEASE_DHCP="Releasing DHCP on interface %s..."
         MSG_RENEW_IP="Renewing IP address on interface %s..."
         MSG_GOT_IP="Interface %s obtained IP address: %s"
         MSG_WAIT_IP_TIMEOUT="After waiting %s seconds, interface %s still has no IP address, aborting login."
+        MSG_EXECUTE_LOGIN="Executing %s login script..."
+        MSG_LOGIN_SUCCESS="%s login successful, updated last login time."
+        MSG_LOGIN_FAILURE="%s login failed, did not update last login time."
         MSG_LOGIN_OUTPUT="Login output: %s"
-        
-        # CT auth client specific messages
-        MSG_CT_EXECUTE_LOGIN="Executing CT login script..."
-        MSG_CT_LOGIN_SUCCESS="Login successful, updated last login time."
-        MSG_CT_LOGIN_FAILURE="Login failed, did not update last login time."
-        
-        # Srun auth client specific messages
-        MSG_SRUN_EXECUTE_LOGIN="Executing Srun authentication login script..."
-        MSG_SRUN_LOGIN_SUCCESS="Srun authentication login successful, updated last login time."
-        MSG_SRUN_LOGIN_FAILURE="Srun authentication login failed, did not update last login time."
-        MSG_SRUN_USERNAME_PASSWORD_NOT_SET="Username or password for Srun authentication is not set, cannot login."
+        MSG_AUTH_PARAM_ERROR="Parameter parsed to login script is illegal, aborting login."
         
         # Logging messages
         MSG_LOG_INITIALIZED="Log initialized. Log file created at"
-        MSG_LOG_ROTATION_COMPLETED="Log rotation completed. Kept %s/%s lines (retention period: %s days)"
         MSG_LOG_FILE_CLEARED="Log file cleared (retention period: %s days)"
         MSG_NO_LOGS_AVAILABLE="No logs available"
         MSG_LOG_CLEANUP_COMPLETED="Log cleanup completed. Deleted %s/%s log files (retention period: %s days)"
