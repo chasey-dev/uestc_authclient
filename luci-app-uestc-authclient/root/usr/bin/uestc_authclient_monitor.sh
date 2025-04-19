@@ -85,6 +85,9 @@ init_config() {
         exit 1
     fi
 
+    # Set log domain
+    set_log_domain "$AUTH_TYPE"
+
     log_message "$MSG_MONITOR_SCRIPT_STARTED"
 
     # Log limited monitoring status

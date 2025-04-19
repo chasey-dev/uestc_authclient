@@ -7,12 +7,45 @@ if [ -z "$MSG_SERVICE_STARTED" ]; then
     . /usr/lib/uestc_authclient/i18n.sh
 fi
 
-# Log directory path
-LOG_DIR="/tmp/uestc_authclient_logs"
+# Log domain - defaults to "global"
+LOG_DOMAIN="global"
+# Base directory for all logs
+LOG_BASE_DIR="/tmp/uestc_authclient"
+# Log directory path (domain-specific)
+LOG_DIR="$LOG_BASE_DIR/$LOG_DOMAIN/logs"
 # Current log file path (generated daily)
 LOG_FILE=""
-# Last log cleanup timestamp file
-LOG_CLEANUP_TIMESTAMP_FILE="/tmp/uestc_authclient_last_cleanup"
+# Last log cleanup timestamp file (domain-specific)
+LOG_CLEANUP_TIMESTAMP_FILE="$LOG_DIR/last_cleanup"
+
+#######################################
+# Set the log domain and update paths
+# Arguments:
+#   $1 - Log domain name
+#######################################
+set_log_domain() {
+    local new_domain="$1"
+    if [ -z "$new_domain" ]; then
+        return 1
+    fi
+    
+    LOG_DOMAIN="$new_domain"
+    LOG_DIR="$LOG_BASE_DIR/$LOG_DOMAIN/logs"
+    LOG_CLEANUP_TIMESTAMP_FILE="$LOG_DIR/last_cleanup"
+    
+    # Re-initialize logging with the new domain
+    log_init
+    return 0
+}
+
+#######################################
+# Get the current log domain
+# Returns:
+#   Current log domain name
+#######################################
+get_log_domain() {
+    echo "$LOG_DOMAIN"
+}
 
 #######################################
 # Initialize logging
@@ -22,6 +55,8 @@ LOG_CLEANUP_TIMESTAMP_FILE="/tmp/uestc_authclient_last_cleanup"
 log_init() {
     if [ -n "$1" ]; then
         LOG_DIR="$1"
+        # Update cleanup timestamp file path if using custom directory
+        LOG_CLEANUP_TIMESTAMP_FILE="$LOG_DIR/last_cleanup"
     fi
     
     # Ensure log directory exists
@@ -51,12 +86,13 @@ get_current_log_file() {
     # Check if we need to use a new log file (date changed)
     if [ "$LOG_FILE" != "$current_log_file" ]; then
         LOG_FILE="$current_log_file"
-        
-        # Create new log file if it doesn't exist
-        if [ ! -f "$LOG_FILE" ]; then
-            touch "$LOG_FILE"
-            echo "$(date): $MSG_LOG_INITIALIZED $LOG_FILE" >> "$LOG_FILE"
-        fi
+    fi
+    
+    # Check if the log file exists, create it if it doesn't
+    # This handles both new date and external deletion cases
+    if [ ! -f "$LOG_FILE" ]; then
+        touch "$LOG_FILE"
+        echo "$(date): $MSG_LOG_INITIALIZED $LOG_FILE" >> "$LOG_FILE"
     fi
     
     echo "$LOG_FILE"
@@ -190,15 +226,32 @@ log_clean() {
 # Returns:
 #   All log content from all available log files
 #######################################
-get_all_logs() {
+get_logs_all() {
+    # Get logs from all domains
+    for domain in $(list_log_domains); do
+        get_logs_by_domain "$domain"
+    done
+}
+
+#######################################
+# Get all log content from a specific domain without changing the current domain
+# Arguments:
+#   $1 - Domain name (optional, defaults to current domain)
+# Returns:
+#   All log content from all available log files in the specified domain
+#######################################
+get_logs_by_domain() {
+    local domain="${1:-$LOG_DOMAIN}"
+    local domain_log_dir="$LOG_BASE_DIR/$domain/logs"
+    
     # Check if log directory exists
-    if [ ! -d "$LOG_DIR" ]; then
+    if [ ! -d "$domain_log_dir" ]; then
         echo "$MSG_NO_LOGS_AVAILABLE"
         return
     fi
     
     # Find all log files and sort them by name (which is by date)
-    local log_files=$(find "$LOG_DIR" -name "*.log" | sort)
+    local log_files=$(find "$domain_log_dir" -name "*.log" | sort)
     
     # If no log files, return message
     if [ -z "$log_files" ]; then
@@ -212,13 +265,79 @@ get_all_logs() {
         local file_date=$(basename "$log_file" .log)
         
         # Add a header for each log file
-        echo "=== $file_date ==="
+        echo "=== $domain - $file_date ==="
         cat "$log_file"
         echo "" # Add empty line between log files
     done
 }
 
+#######################################
+# List all available log domains
+# Returns:
+#   List of all log domains that have logs
+#######################################
+list_log_domains() {
+    # Check if base directory exists
+    if [ ! -d "$LOG_BASE_DIR" ]; then
+        echo "$MSG_NO_LOGS_AVAILABLE"
+        return
+    fi
+    
+    # Find all directories in the base directory that have logs
+    for domain_dir in "$LOG_BASE_DIR"/*; do
+        [ -d "$domain_dir" ] || continue
+        local domain=$(basename "$domain_dir")
+        
+        # Check if logs directory exists
+        if [ -d "$domain_dir/logs" ] && [ -n "$(find "$domain_dir/logs" -name "*.log" 2>/dev/null)" ]; then
+            echo "$domain"
+        fi
+    done
+}
+
+#######################################
+# Delete all logs for a specific domain
+# Arguments:
+#   $1 - Domain name (optional, defaults to current domain)
+# Returns:
+#   0 if successful, 1 if domain logs directory doesn't exist
+#######################################
+delete_logs_by_domain() {
+    local domain="${1:-$LOG_DOMAIN}"
+    local domain_log_dir="$LOG_BASE_DIR/$domain/logs"
+    
+    # Check if log directory exists
+    if [ ! -d "$domain_log_dir" ]; then
+        echo "$MSG_NO_LOGS_AVAILABLE"
+        return 1
+    fi
+    
+    # Remove all log files but keep the directory structure
+    rm -f "$domain_log_dir"/*.log
+    
+    # Reset the cleanup timestamp file
+    local current_time=$(date +%s)
+    echo "$current_time" > "$domain_log_dir/last_cleanup"
+    
+    return 0
+}
+
+#######################################
+# Delete all logs for all domains
+# Returns:
+#   0 if successful
+#######################################
+delete_logs_all() {
+    local success=0
+    
+    # Get all domains
+    for domain in $(list_log_domains); do
+        delete_logs_by_domain "$domain" >/dev/null
+        success=0
+    done
+    
+    return $success
+}
+
 # Auto-initialize logging when this script is sourced
 log_init
-
-# Add any additional functions or commands here 

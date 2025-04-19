@@ -40,8 +40,8 @@ function action_get_log()
     local i18n = require "luci.i18n"
     local sys = require "luci.sys"
     
-    -- Call the get_all_logs function in log_utils.sh to get all logs content
-    local log_content = sys.exec(". /usr/lib/uestc_authclient/log_utils.sh && get_all_logs") or i18n.translate("No logs available")
+    -- Call the get_logs_all function in log_utils.sh to get all logs content
+    local log_content = sys.exec(". /usr/lib/uestc_authclient/log_utils.sh && get_logs_all") or i18n.translate("No logs available")
 
     http.prepare_content("text/plain; charset=utf-8")
     http.header("Cache-Control", "no-cache")
@@ -82,7 +82,7 @@ function action_get_status()
     -- Get last login time
     local fs = require "nixio.fs"
     local i18n = require "luci.i18n"
-    local last_login_ts = fs.readfile("/tmp/uestc_authclient_last_login") or ""
+    local last_login_ts = fs.readfile("/tmp/uestc_authclient/last_login") or ""
     
     -- Format last login time for display
     local last_login
@@ -133,7 +133,7 @@ function action_clear_log()
     local sys = require "luci.sys"
     
     -- Remove all log files in the log directory
-    sys.call("rm -rf /tmp/uestc_authclient_logs/*.log")
+    sys.call(". /usr/lib/uestc_authclient/log_utils.sh && delete_logs_all")
     
     -- Re-initialize the log file for today
     sys.call(". /usr/lib/uestc_authclient/log_utils.sh")
