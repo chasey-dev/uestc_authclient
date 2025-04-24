@@ -8,17 +8,11 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# --------------------------------------------------------------
+# Title
+# --------------------------------------------------------------
 msgid "UESTC Authentication"
 msgstr "UESTC 认证"
-
-msgid "Overview"
-msgstr "概览"
-
-msgid "Configuration"
-msgstr "配置"
-
-msgid "No logs available"
-msgstr "暂无日志"
 
 msgid "UESTC Authentication Client"
 msgstr "UESTC 认证客户端"
@@ -26,35 +20,127 @@ msgstr "UESTC 认证客户端"
 msgid "This page displays the current status of the UESTC authentication client. Please adjust other settings as needed."
 msgstr "此页面显示 UESTC 认证客户端的当前状态，根据需要调整其他设置。"
 
-msgid "Settings"
-msgstr "设置"
+msgid "Status & Control"
+msgstr "状态与控制"
 
-msgid "Global"
-msgstr "全局"
+msgid "Global Settings"
+msgstr "全局设置"
 
-msgid "Basic Settings"
-msgstr "基本设置"
+msgid "Authentication Sessions"
+msgstr "认证配置"
 
-msgid "Authentication Settings"
-msgstr "认证设置"
-
-msgid "Network Settings"
-msgstr "网络设置"
-
-msgid "Logging Settings"
-msgstr "日志设置"
-
-msgid "Scheduled Disconnection"
-msgstr "定时断网设置"
-
-msgid "Configuration has been saved and the service has been restarted!"
-msgstr "配置已保存，服务已重启！"
-
-msgid "Enable on startup"
+# --------------------------------------------------------------
+# Global control
+# --------------------------------------------------------------
+msgid "Bring up on boot"
 msgstr "开机自动运行"
 
 msgid "Check to run the service automatically at system startup."
 msgstr "勾选后，服务将在系统启动时自动运行。"
+
+msgid "Restart Service"
+msgstr "重启服务"
+
+msgid "Restart the UESTC Auth service?"
+msgstr "是否重启服务？"
+
+msgid "Global Logs"
+msgstr "全局日志"
+
+# --------------------------------------------------------------
+# Log content
+# --------------------------------------------------------------
+
+msgid "Read \/ Reread log file"
+msgstr "读取 \/ 刷新日志"
+
+msgid "Loading logs..."
+msgstr "正读取日志..."
+
+msgid "No logs available"
+msgstr "暂无日志"
+
+msgid "Failed to load logs."
+msgstr "读取日志失败。"
+
+# --------------------------------------------------------------
+# Global
+# --------------------------------------------------------------
+msgid "Log retention days (Global)"
+msgstr "日志保留天数（全局）"
+
+msgid "Specify the number of days to retain global log files."
+msgstr "指定全局的日志文件保留天数，超过此天数的日志将被清除。"
+
+# --------------------------------------------------------------
+# Session: add & validate
+# --------------------------------------------------------------
+msgid "Add new session..."
+msgstr "添加新配置..."
+
+msgid "Please enter a new session name: (avoid using reserved names like \"global\")"
+msgstr "请输入新配置的名称：（请不要使用例如 \"global\" 的保留字段）"
+
+msgid "Session name cannot be empty."
+msgstr "配置名不能为空。"
+
+msgid "This name is reserved, please choose another."
+msgstr "请不要使用保留字段作为配置名。"
+
+msgid "Only letters, numbers, \"-\" and \"_\" are allowed (1-32 chars)."
+msgstr "只能使用字母、数字以及 \"-\"、\"_\"（长度 1-32 字符）。"
+
+msgid "Session name already exists."
+msgstr "已存在相同配置名。"
+
+msgid "Create"
+msgstr "创建"
+
+msgid "Session Configuration"
+msgstr "当前配置详情"
+
+# --------------------------------------------------------------
+# Row title
+# --------------------------------------------------------------
+msgid "Status"
+msgstr "状态"
+
+msgid "Network Status"
+msgstr "网络状态"
+
+msgid "Last Login Time"
+msgstr "上次登录时间"
+
+# --------------------------------------------------------------
+# State
+# --------------------------------------------------------------
+msgid "Running"
+msgstr "正在运行"
+
+msgid "Not running"
+msgstr "未运行"
+
+msgid "Disconnected"
+msgstr "未连接"
+
+# --------------------------------------------------------------
+# Hint
+# --------------------------------------------------------------
+
+msgid "Start\/Stop this session"
+msgstr "启动\/停止当前配置"
+
+msgid "Restart this session"
+msgstr "重启当前配置"
+
+msgid "Executing action..."
+msgstr "正在执行操作..."
+
+# --------------------------------------------------------------
+# Authentication
+# --------------------------------------------------------------
+msgid "Authentication Settings"
+msgstr "认证设置"
 
 msgid "Limited Monitoring"
 msgstr "限时监控"
@@ -71,38 +157,17 @@ msgid ""
 msgstr ""
 "选择认证方式。新建宿舍楼及教学区使用 Srun 认证方式。"
 
-msgid "CT authentication method (qsh-telecom-autologin)"
-msgstr "电信认证方式 (qsh-telecom-autologin)"
-
 msgid "Srun authentication method (go-nd-portal)"
 msgstr "Srun 认证方式 (go-nd-portal)"
 
-msgid "Username"
-msgstr "认证用户名"
-
-msgid "Your authentication username."
-msgstr "您的认证用户账号。"
-
-msgid "Required"
-msgstr "必填"
-
-msgid "Username cannot be empty."
-msgstr "用户名不能为空。"
-
-msgid "Password"
-msgstr "电信认证密码"
-
-msgid "Your authentication password."
-msgstr "您的认证密码。"
-
-msgid "Password cannot be empty."
-msgstr "密码不能为空。"
-
-msgid "Authentication Host"
-msgstr "认证服务器地址"
+msgid "CT authentication method (qsh-telecom-autologin)"
+msgstr "电信认证方式 (qsh-telecom-autologin)"
 
 msgid "Srun authentication mode"
 msgstr "Srun 认证方式"
+
+msgid "Select the authentication mode for the Srun client."
+msgstr "选择 Srun 客户端的认证方式。"
 
 msgid "China Telecom"
 msgstr "电信"
@@ -110,26 +175,38 @@ msgstr "电信"
 msgid "Campus Network"
 msgstr "校园网"
 
-msgid "Select the authentication mode for the Srun client."
-msgstr "选择 Srun 客户端的认证方式。"
+msgid "Username cannot be empty."
+msgstr "用户名不能为空。"
+
+msgid "Password cannot be empty."
+msgstr "密码不能为空。"
+
+msgid "Your authentication username."
+msgstr "你的认证账号。"
+
+msgid "Your authentication password."
+msgstr "你的认证密码。"
+
+msgid "Authentication Host"
+msgstr "认证服务器地址"
 
 msgid "Authentication server address, modify according to your area."
-msgstr "认证服务器地址，根据您所在区域进行修改。"
+msgstr "认证服务器地址，根据你所在区域进行修改。"
 
-msgid "Interface"
-msgstr "网络接口"
+# --------------------------------------------------------------
+# Listening
+# --------------------------------------------------------------
+msgid "Network Settings"
+msgstr "网络设置"
 
 msgid "Select the interface for authentication. (Linux Interface, Refers to Device in Openwrt.)"
-msgstr "选择用于认证的网络接口。（Linux接口 - Interface，在Openwrt中称作设备 - Device）"
+msgstr "选择用于认证的网络接口。（Linux 接口，在 OpenWrt 中称作 Device）"
 
 msgid "Heartbeat hosts"
 msgstr "心跳检测地址"
 
-msgid ""
-"Host addresses used to check network connectivity; you can add multiple "
-"addresses."
-msgstr ""
-"用于检测网络连通性的主机地址，您可以添加多个地址。"
+msgid "Host addresses used to check network connectivity; you can add multiple addresses."
+msgstr "用于检测网络连通性的主机地址，可添加多个。"
 
 msgid "Check interval (seconds)"
 msgstr "心跳检测间隔（秒）"
@@ -137,8 +214,11 @@ msgstr "心跳检测间隔（秒）"
 msgid "Time interval for checking network status, in seconds."
 msgstr "检测网络状态的时间间隔，单位为秒。"
 
-msgid "Log retention days"
-msgstr "日志保留天数"
+# --------------------------------------------------------------
+# Schedule
+# --------------------------------------------------------------
+msgid "Scheduled Disconnection"
+msgstr "定时断网设置"
 
 msgid "Enable scheduled disconnection"
 msgstr "启用定时断网"
@@ -155,204 +235,41 @@ msgstr "断网结束时间（小时）"
 msgid "Disconnection start time and end time cannot be the same!"
 msgstr "断网开始时间和结束时间不能相同！"
 
-msgid "Not running"
-msgstr "未运行"
+# --------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------
+msgid "Logging Settings"
+msgstr "日志设置"
 
-msgid "Disconnected"
-msgstr "未连接"
-
-msgid "Connected"
-msgstr "已连接"
-
-msgid "None"
-msgstr "无"
-
-msgid "Status"
-msgstr "状态"
-
-msgid "Network Status"
-msgstr "网络状态"
-
-msgid "Last Login Time"
-msgstr "上次登录时间"
-
-msgid "Service Status"
-msgstr "服务状态"
-
-msgid "Running"
-msgstr "正在运行"
-
-msgid "Control"
-msgstr "控制"
-
-msgid "Start"
-msgstr "启动"
-
-msgid "Stop"
-msgstr "停止"
-
-msgid "Logs"
-msgstr "日志"
-
-msgid "Clear Logs"
-msgstr "清除日志"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Error executing command:"
-msgstr "执行命令时出错："
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Status & Control"
-msgstr "状态与控制"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Loading..."
-msgstr "加载中"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Global Logs"
-msgstr "全局日志"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Confirm Action"
-msgstr "确认是否执行？"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Start the UESTC Auth service?"
-msgstr "是否启动服务？"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Stop the UESTC Auth service?"
-msgstr "是否停止服务？"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Cancel"
-msgstr "取消"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Start Service"
-msgstr "启动服务"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Stop Service"
-msgstr "停止服务"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Restart Service"
-msgstr "重启服务"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Restart the UESTC Auth service?"
-msgstr "是否重启服务？"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Log retention days (Global)"
-msgstr "日志保留天数（全局）"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Specify the number of days to retain global log files."
-msgstr "指定全局的日志文件保留天数，超过此天数的日志将被清除。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Authentication Sessions"
-msgstr "认证配置"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Add new session..."
-msgstr "添加新配置..."
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid ""
-"Please enter a new session name: (avoid using reserved names like "
-"\"global\")"
-msgstr ""
-"请输入新配置的名称：（请不要使用例如 \"global\" 的保留字段）"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Session name cannot be empty."
-msgstr "配置名不能为空。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid ""
-"Only letters, numbers, "
-"\"-\" and \"_\" are allowed (1-32 chars)."
-msgstr ""
-"只能允许使用字母、数字，以及"
-"\"-\" 和 \"_\""
-"(长度限制为 1 - 32 字符)。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "This name is reserved, please choose another."
-msgstr "请不要使用保留字段作为配置名。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Session name already exists."
-msgstr "已存在相同配置名。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Create"
-msgstr "创建"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Name"
-msgstr "配置名称"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Session Configuration"
-msgstr "当前配置详情"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
 msgid "Log Viewer"
 msgstr "查看日志"
 
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
 msgid "Log retention days (Session)"
 msgstr "日志保留天数（当前配置）"
 
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
 msgid "Specify the number of days to retain session log files."
 msgstr "指定当前配置的日志文件保留天数，超过此天数的日志将被清除。"
 
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Read / Reread log file"
-msgstr "读取 / 刷新日志"
+# --------------------------------------------------------------
+# Common
+# --------------------------------------------------------------
+msgid "Error executing command:"
+msgstr "执行命令时出错："
 
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Loading logs..."
-msgstr "正读取日志..."
+msgid "Loading..."
+msgstr "加载中"
 
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Failed to load logs."
-msgstr "读取日志失败。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Press button to load logs."
-msgstr "点击按钮以加载日志。"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Edit"
-msgstr "编辑"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Start this session"
-msgstr "启动当前配置"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Stop this session"
-msgstr "停止当前配置"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Restart this session"
-msgstr "重启当前配置"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Restart"
-msgstr "重启"
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Executing action..."
-msgstr "正在执行操作..."
-
-#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Unknown"
-msgstr "未知"
+# --------------------------------------------------------------
+#~ UNUSED
+#~ msgid "Overview"
+#~ msgstr "概览"
+#~ msgid "Configuration has been saved and the service has been restarted!"
+#~ msgstr "配置已保存，服务已重启！"
+#~ msgid "Service Status"
+#~ msgstr "服务状态"
+#~ msgid "Control"
+#~ msgstr "控制"
+#~ msgid "Logs"
+#~ msgstr "日志"
+#~ msgid "Clear Logs"
+#~ msgstr "清除日志"

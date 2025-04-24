@@ -110,7 +110,7 @@ return view.extend({
         s.tab('global_settings', _('Global Settings'));
 
         // Info Tab - Global Service Status/Control
-        o = s.taboption('info', form.Flag, 'enabled', _('Enable on startup'));
+        o = s.taboption('info', form.Flag, 'enabled', _('Bring up on boot'));
         o.description = _('Check to run the service automatically at system startup.');
         o.default = '0';
         o.rmempty = false;
@@ -167,7 +167,7 @@ return view.extend({
         o = s.taboption('info', form.Button, '_show_global_log');
         o.title = _('Global Logs');
         o.inputstyle = 'apply';
-        o.inputtitle = _('View Global Log');
+        o.inputtitle = _('Read / Reread log file');
         o.onclick = L.bind(function(ev) {
             //  console.log('Global log button clicked');
              let logDisplay = document.getElementById('global_log_display_area');
@@ -178,7 +178,7 @@ return view.extend({
                      logDisplay.value = _('Loading logs...');
                      self.callGetLogs('global').then(function(logText) {
                         //  console.log('Global logs received');
-                         logDisplay.value = logText || _('No global logs available.');
+                         logDisplay.value = logText || _('No logs available');
                          logDisplay.scrollTop = logDisplay.scrollHeight; // Scroll to bottom
                      }).catch(function(e){
                           console.error('Error loading global logs:', e);
@@ -258,7 +258,7 @@ return view.extend({
         
                 // allowed chars: A–Z a–z 0–9 - _ , length 1-32
                 if (!/^[A-Za-z0-9_-]{1,32}$/.test(sid))
-                    return _('Only letters, numbers, “-” and “_” are allowed (1-32 chars).');
+                    return _('Only letters, numbers, "-" and "_" are allowed (1-32 chars).');
         
                 if (existing.includes(sid))
                     return _('Session name already exists.');
@@ -658,7 +658,7 @@ return view.extend({
                 }else{
                     dom.content(networkCell, E('em', _('Not running')));
                 }
-                dom.content(loginCell, this.datestr(status.last_login));
+                dom.content(loginCell, E(status.last_login != 0 ? 'p' : 'em', this.datestr(status.last_login)));
 
                 // Update Start/Stop button
                 let currentAction = status.running ? 'stop' : 'start';
