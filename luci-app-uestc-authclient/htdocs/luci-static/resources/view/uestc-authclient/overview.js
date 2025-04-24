@@ -166,7 +166,7 @@ return view.extend({
         // Global Log Button (Modified for Inline Toggle)
         o = s.taboption('info', form.Button, '_show_global_log');
         o.title = _('Global Logs');
-        o.inputstyle = 'info';
+        o.inputstyle = 'apply';
         o.inputtitle = _('View Global Log');
         o.onclick = L.bind(function(ev) {
             //  console.log('Global log button clicked');
@@ -179,6 +179,7 @@ return view.extend({
                      self.callGetLogs('global').then(function(logText) {
                         //  console.log('Global logs received');
                          logDisplay.value = logText || _('No global logs available.');
+                         logDisplay.scrollTop = logDisplay.scrollHeight; // Scroll to bottom
                      }).catch(function(e){
                           console.error('Error loading global logs:', e);
                           logDisplay.value = _('Failed to load logs.') + ' ' + e.message;
@@ -193,17 +194,31 @@ return view.extend({
 
         // Global Log Display Area (DummyValue + Render)
         o = s.taboption('info', form.DummyValue, '_global_log_display');
-        o.render = function(option_index, section_id, container) {
-            let id = 'global_log_display_area';
-            // Create textarea but hide it initially
-            let textarea = E('textarea', {
-                'id': id,
-                'style': 'width:100%; font-family: monospace; font-size: 10px; display: none; margin-top: 10px;',
-                'rows': 15,
-                'readonly': 'readonly',
-                'wrap': 'off'
-             });
-             return textarea;
+        o.render = function() {
+            const id = 'global_log_display_area';
+        
+            const textarea = E('textarea', {
+                id:    id,
+                rows:  20,
+                readonly: 'readonly',
+                wrap:  'off',
+                class: 'cbi-input-textarea',
+                style: [
+                    'width: 100%',
+                    // 'font-family: monospace',
+                    // 'font-size: 15px',
+                    'box-sizing:border-box',
+                    'display: none' // Initially hidden
+                ].join(';')
+            });
+
+            return E('div', {
+                style: [
+                    'display:flex',
+                    'justify-content:center',   // align horizontally
+                    'padding:8px 0'
+                ].join(';')
+            }, [ textarea ]);
         };
 
         // Global Settings Tab
@@ -333,7 +348,7 @@ return view.extend({
             modalSection.tab('network', _('Network Settings'));
             modalSection.tab('schedule', _('Scheduled Disconnection'));
             modalSection.tab('logging', _('Logging Settings'));
-            modalSection.tab('logview', _('Log Viewer'));
+            // modalSection.tab('logview', _('Log Viewer'));
 
             // Authentication Tab Options
             o = modalSection.taboption('auth', form.Flag, 'enabled', _('Enabled'));
@@ -346,47 +361,56 @@ return view.extend({
             o.rmempty = false;
 
             o = modalSection.taboption('auth', form.ListValue, 'auth_type', _('Authentication method'));
+            o.description = _('Select the authentication method. New dormitories and teaching areas use the ' + 
+                                'Srun authentication method.');
             o.value('srun', _('Srun authentication method (go-nd-portal)'));
             o.value('ct', _('CT authentication method (qsh-telecom-autologin)'));
             o.default = 'srun';
             o.rmempty = false;
 
             o = modalSection.taboption('auth', form.ListValue, 'auth_mode', _('Srun authentication mode'));
+            o.description = _('Select the authentication mode for the Srun client.');
             o.value('dx', _('China Telecom'));
             o.value('edu', _('Campus Network'));
             o.default = 'dx';
             o.depends('auth_type', 'srun');
 
             o = modalSection.taboption('auth', form.Value, 'auth_username', _('Username'));
+            o.description = _('Your authentication username.')
             o.placeholder = _('Required');
             o.rmempty = false;
             o.validate = function(section_id, value) { if (!value) return _('Username cannot be empty.'); return true; };
 
             o = modalSection.taboption('auth', form.Value, 'auth_password', _('Password'));
+            o.description = _('Your authentication password.')
             o.password = true;
             o.placeholder = _('Required');
             o.rmempty = false;
             o.validate = function(section_id, value) { if (!value) return _('Password cannot be empty.'); return true; };
 
             o = modalSection.taboption('auth', form.Value, 'auth_host', _('Authentication Host'));
+            o.description = _('Authentication server address, modify according to your area.')
             o.datatype = 'ip4addr';
             o.placeholder = '10.253.0.237';
             o.rmempty = false;
             
-
             // Network Tab Options
             o = modalSection.taboption('network', widgets.DeviceSelect, 'listen_interface', _('Interface'));
+            o.description = _('Select the interface for authentication. (Linux Interface, Refers to Device in Openwrt.)')
             o.noaliases = true; // Typically want physical devices
             o.default = 'wan';
             o.rmempty = false;
 
             o = modalSection.taboption('network', form.DynamicList, 'listen_hosts', _('Heartbeat hosts'));
+            o.description = _('Host addresses used to check network connectivity; you can add multiple ' +
+                                'addresses.');
             o.datatype = 'ip4addr'
             o.default = ["223.5.5.5", "119.29.29.29"];
             o.placeholder = '223.5.5.5';
             o.rmempty = false;
 
             o = modalSection.taboption('network', form.Value, 'listen_check_interval', _('Check interval (seconds)'));
+            o.description = _('Time interval for checking network status, in seconds.')
             o.datatype = 'uinteger';
             o.default = '30'
             o.placeholder = '30';
@@ -394,11 +418,13 @@ return view.extend({
 
             // Schedule Tab Options
             o = modalSection.taboption('schedule', form.Flag, 'schedule_enabled', _('Enable scheduled disconnection'));
+            o.description = _('Check to disconnect the network during specified time periods.');
             o.default = '0';
             o.rmempty = false;
 
             o = modalSection.taboption('schedule', form.Value, 'schedule_start', _('Disconnection start time (hour)'));
             o.datatype = 'range(0,23)';
+            // dont remove default and rmempty here to prevent UI bugs
             o.default = '3';
             o.placeholder = '3';
             o.rmempty = false;
@@ -406,6 +432,7 @@ return view.extend({
 
             o = modalSection.taboption('schedule', form.Value, 'schedule_end', _('Disconnection end time (hour)'));
             o.datatype = 'range(0,23)';
+            // dont remove default and rmempty here to prevent UI bugs
             o.default = '4';
             o.placeholder = '4';
             o.rmempty = false;
@@ -426,9 +453,9 @@ return view.extend({
             o.placeholder = '7';
             o.rmempty = false;
 
-            // Log Viewer Tab Options - Inline display
-            o = modalSection.taboption('logview', form.Button, '_read_log');
-            o.title = '';
+            // Log Viewer - Inline display
+            o = modalSection.taboption('logging', form.Button, '_read_log');
+            o.title = _('Log Viewer');
             o.inputtitle = _('Read / Reread log file');
             o.inputstyle = 'apply';
             o.onclick = L.bind(function(sid, ev) {
@@ -443,6 +470,7 @@ return view.extend({
                         return self.callGetLogs(sid).then(function(logText) {
                             //  console.log('Session logs received for:', sid);
                             logDisplay.value = logText || _('No logs available');
+                            logDisplay.scrollTop = logDisplay.scrollHeight; // Scroll to bottom
                         }).catch(function(e){
                              console.error('Error loading session logs for:', sid, e);
                              logDisplay.value = _('Failed to load logs.') + ' ' + e.message;
@@ -455,19 +483,33 @@ return view.extend({
                 }
             }, self, section_id);
 
-            o = modalSection.taboption('logview', form.DummyValue, '_log_display'); // Placeholder for the textarea
+            o = modalSection.taboption('logging', form.DummyValue, '_log_display'); // Placeholder for the textarea
             o.modalonly = true;
             o.render = function(option_index, section_id, container) {
-                let id = 'log_display_area_' + section_id;
-                // Create textarea but hide it initially
-                let textarea = E('textarea', {
-                    'id': id,
-                    'style': 'width:100%; font-family: monospace; font-size: 10px; display: none;',
-                    'rows': 20,
-                    'readonly': 'readonly',
-                    'wrap': 'off'
-                 });
-                 return textarea;
+                const id = 'log_display_area_' + section_id;
+
+                const textarea = E('textarea', {
+                    id:    id,
+                    rows:  20,
+                    readonly: 'readonly',
+                    wrap:  'off',
+                    class: 'cbi-input-textarea',
+                    style: [
+                        'width: 100%',
+                        // 'font-family: monospace',
+                        // 'font-size: 15px',
+                        'box-sizing:border-box',
+                        'display: none' // Initially hidden
+                    ].join(';')
+                });
+
+                return E('div', {
+                    style: [
+                        'display:flex',
+                        'justify-content:center',   // align horizontally
+                        'padding:8px 0'
+                    ].join(';')
+                }, [ textarea ]);
             };
         };
 
@@ -611,7 +653,11 @@ return view.extend({
             if (status) {
                 // Update status text
                 dom.content(statusCell, status.running ? E([], [E('strong', {style: 'color:green'}, _('Running')), ' (PID: ' + status.pid + ')']) : E('strong',{style:'color:red'},_('Not running')));
-                dom.content(networkCell, status.network_up ? E('strong', {style: 'color:green'}, _('Connected')) : E('strong',{style:'color:red'},_('Disconnected')));
+                if(status.running) {
+                    dom.content(networkCell, status.network_up ? E('strong', {style: 'color:green'}, _('Connected')) : E('strong',{style:'color:red'},_('Disconnected')));
+                }else{
+                    dom.content(networkCell, E('em', _('Not running')));
+                }
                 dom.content(loginCell, this.datestr(status.last_login));
 
                 // Update Start/Stop button

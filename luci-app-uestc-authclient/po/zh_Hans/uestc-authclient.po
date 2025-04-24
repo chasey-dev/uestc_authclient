@@ -119,8 +119,8 @@ msgstr "认证服务器地址，根据您所在区域进行修改。"
 msgid "Interface"
 msgstr "网络接口"
 
-msgid "Select the interface for authentication. (Linux Interface, Refers to device in Openwrt.)"
-msgstr "选择用于认证的网络接口。（Linux接口 - Interface，在Openwrt中称作设备 - device）"
+msgid "Select the interface for authentication. (Linux Interface, Refers to Device in Openwrt.)"
+msgstr "选择用于认证的网络接口。（Linux接口 - Interface，在Openwrt中称作设备 - Device）"
 
 msgid "Heartbeat hosts"
 msgstr "心跳检测地址"
@@ -139,7 +139,6 @@ msgstr "检测网络状态的时间间隔，单位为秒。"
 
 msgid "Log retention days"
 msgstr "日志保留天数"
-
 
 msgid "Enable scheduled disconnection"
 msgstr "启用定时断网"
