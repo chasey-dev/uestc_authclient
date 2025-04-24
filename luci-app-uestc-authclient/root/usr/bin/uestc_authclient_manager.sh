@@ -310,8 +310,6 @@ case "$1" in
             # check if global log file needs to be cleaned
             log_clean "$LOG_RETENTION_DAYS" 24
             get_logs_by_domain "$2"
-        else
-            echo ""
         fi
         ;;
 

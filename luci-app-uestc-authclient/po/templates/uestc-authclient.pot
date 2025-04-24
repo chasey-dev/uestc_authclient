@@ -116,11 +116,19 @@ msgid "Add new session..."
 msgstr ""
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Please enter a new session name: (avoid using reserved names like "global")"
+msgid ""
+"Please enter a new session name: (avoid using reserved names like "
+"\"global\")"
 msgstr ""
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
 msgid "Session name cannot be empty."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid ""
+"Only letters, numbers, "
+"\"-\" and \"_\" are allowed (1-32 chars)."
 msgstr ""
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
@@ -228,7 +236,7 @@ msgid "Campus Network"
 msgstr ""
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Host"
+msgid "Authentication Host"
 msgstr ""
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js

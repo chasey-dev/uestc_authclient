@@ -98,7 +98,7 @@ msgstr "您的认证密码。"
 msgid "Password cannot be empty."
 msgstr "密码不能为空。"
 
-msgid "Host"
+msgid "Authentication Host"
 msgstr "认证服务器地址"
 
 msgid "Srun authentication mode"
@@ -263,12 +263,24 @@ msgid "Add new session..."
 msgstr "添加新配置..."
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
-msgid "Please enter a new session name: (avoid using reserved names like "global")"
-msgstr "请输入新配置的名称：（请不要使用例如"global"的保留字段）"
+msgid ""
+"Please enter a new session name: (avoid using reserved names like "
+"\"global\")"
+msgstr ""
+"请输入新配置的名称：（请不要使用例如 \"global\" 的保留字段）"
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
 msgid "Session name cannot be empty."
 msgstr "配置名不能为空。"
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid ""
+"Only letters, numbers, "
+"\"-\" and \"_\" are allowed (1-32 chars)."
+msgstr ""
+"只能允许使用字母、数字，以及"
+"\"-\" 和 \"_\""
+"(长度限制为 1 - 32 字符)。"
 
 #: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
 msgid "This name is reserved, please choose another."

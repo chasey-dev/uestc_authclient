@@ -104,7 +104,7 @@ return view.extend({
             _('This page displays the current status of the UESTC authentication client. Please adjust other settings as needed.'));
 
         // --- Global Section --- (Mimicking ddns layout)
-        s = m.section(form.NamedSection, 'basic', 'system');
+        s = m.section(form.NamedSection, 'global', 'system');
         // s.title = _('Settings');
         s.tab('info', _('Status & Control'));
         s.tab('global_settings', _('Global Settings'));
@@ -231,95 +231,198 @@ return view.extend({
         o = s.option(form.DummyValue, '_cfg_network', _('Network Status'));
 
         o = s.option(form.DummyValue, '_cfg_last_login', _('Last Login Time'));
-        // Add "New Session" button handler
-        // Add "New Session" handler (fixed ui.showModal signature)
-        s.handleAdd = function(ev) {
-            const mapInstance = this.map;
-        
-            // Create the DOM nodes once
-            const promptText = E('p', _('Please enter a new session name: (avoid using reserved names like "global")'));
-            const inputField = E('input', {
-            id:    'new_sid',
-            type:  'text',
-            style: 'width:100%; margin-top:8px;'
-            });
-            const errorDiv = E('div', {
-            id:    'new_sid_error',
-            style: 'color:red; display:none; margin-top:4px;'
-            });
-            // Footer container with two buttons
-            const footer = E('div', { 'class': 'right', style: 'margin-top:12px;' }, [
-            E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')),
-            ' ',
-            E('button', {
-                'class': 'cbi-button cbi-button-positive important',
-                'click': L.bind(function() {
-                    const sid = (inputField.value || '').trim();
-                    errorDiv.style.display = 'none';
-            
-                    // 1) validate
-                    if (!sid) {
-                        errorDiv.textContent = _('Session name cannot be empty.');
-                        errorDiv.style.display = 'block';
-                        return;
-                    }
-                    if (['global','basic','_new_'].includes(sid)) {
-                        errorDiv.textContent = _('This name is reserved, please choose another.');
-                        errorDiv.style.display = 'block';
-                        return;
-                    }
-                    if (uci.sections('uestc_authclient','session').some(s=>s['.name']===sid)) {
-                        errorDiv.textContent = _('Session name already exists.');
-                        errorDiv.style.display = 'block';
-                        return;
-                    }
-            
-                    // 2) write UCI
-                    uci.add('uestc_authclient','session', sid);
-                    uci.set('uestc_authclient', sid,     'sid',     sid);
-                    uci.set('uestc_authclient', sid,     'enabled', '0');
-                    uci.set('uestc_authclient', sid,     'lm_enabled', '0');
-                    uci.set('uestc_authclient', sid,     'auth_type',    'srun');
-                    uci.set('uestc_authclient', sid,     'auth_mode', 'dx');
-                    uci.set('uestc_authclient', sid,     'auth_host',      '10.253.0.237');
-                    
-                    // listening
-                    uci.set('uestc_authclient', sid, 'listen_interface',      'wan');
-                    uci.set('uestc_authclient', sid, 'listen_check_interval', '30');
-                    uci.set('uestc_authclient', sid, 'listen_hosts', ['223.5.5.5','119.29.29.29']);
 
-            
-                    // schedule
-                    uci.set('uestc_authclient', sid, 'schedule_enabled',    '0');
-                    uci.set('uestc_authclient', sid, 'schedule_start', '3');
-                    uci.set('uestc_authclient', sid, 'schedule_end',   '4');
-            
-                    // logging
-                    uci.set('uestc_authclient', sid, 'log_rdays', '7');
-            
-                    ui.hideModal();
-            
-                    // 3) refresh and auto‑edit
-                    mapInstance.render().then(function(nodes) {
-                        setTimeout(function() {
-                          const btn = nodes.querySelector(
-                            `.cbi-section-table-row[data-sid="${sid}"] .cbi-button-edit`
-                          );
-                          if (btn) btn.click();
-                        }, 0);
-                    });
-                }, this)
-            }, _('Create'))
+        s.handleAdd = function () {
+            const map  = this.map;
+        
+            // actual validate session ID
+            function validateSid(sid, existing) {
+                if (!sid)             return _('Session name cannot be empty.');
+                if (['global','basic','_new_'].includes(sid))
+                    return _('This name is reserved, please choose another.');
+        
+                // allowed chars: A–Z a–z 0–9 - _ , length 1-32
+                if (!/^[A-Za-z0-9_-]{1,32}$/.test(sid))
+                    return _('Only letters, numbers, “-” and “_” are allowed (1-32 chars).');
+        
+                if (existing.includes(sid))
+                    return _('Session name already exists.');
+                return null;          // everything is ok
+            }
+        
+            // get existing session IDs
+            const existingSids = uci.sections('uestc_authclient', 'session')
+                                    .map(s => s['.name']);
+        
+            // build modal elements
+            const inputSid = E('input', {
+                id:    'new_sid',
+                type:  'text',
+                style: 'width:100%; margin-top:8px;'
+            });
+        
+            const errorMsg = E('div', {
+                style: 'display:none; color:#d9534f; margin-top:4px;'
+            });
+        
+            // create button disabled until validation passes
+            const btnCreate = E('button', {
+                class: 'cbi-button cbi-button-positive important',
+                disabled: true
+            }, _('Create'));
+        
+            // validate real-time
+            function refreshValidation() {
+                const sid  = inputSid.value.trim();
+                const info = validateSid(sid, existingSids);
+        
+                if (info) {
+                    errorMsg.textContent   = info;
+                    errorMsg.style.display = 'block';
+                    btnCreate.disabled     = true;
+                } else {
+                    errorMsg.style.display = 'none';
+                    btnCreate.disabled     = false;
+                }
+            }
+            inputSid.addEventListener('input', refreshValidation);
+        
+            // click handler for the Create button
+            btnCreate.addEventListener('click', async () => {
+                const sid = inputSid.value.trim();
+        
+                // double-check sid
+                const err = validateSid(sid, existingSids);
+                if (err) { refreshValidation(); return; }
+                // write UCI
+                // too much UCI calls may add overhead, use default values in UI
+                uci.add('uestc_authclient','session', sid);
+                // still need it here because we cant know sid
+                uci.set('uestc_authclient', sid,     'sid',     sid);
+                // uci.set('uestc_authclient', sid,     'enabled', '0');
+                // uci.set('uestc_authclient', sid,     'lm_enabled', '0');
+                // uci.set('uestc_authclient', sid,     'auth_type',    'srun');
+                // uci.set('uestc_authclient', sid,     'auth_mode', 'dx');
+                // uci.set('uestc_authclient', sid, 'auth_host', '10.253.0.237');
+                
+                // listening
+                // uci.set('uestc_authclient', sid, 'listen_interface',      'vth1');
+                // uci.set('uestc_authclient', sid, 'listen_check_interval', '30');
+                // uci.set('uestc_authclient', sid, 'listen_hosts', ['223.5.5.5','119.29.29.29']);
+
+                // schedule
+                // uci.set('uestc_authclient', sid, 'schedule_enabled',    '0');
+                // uci.set('uestc_authclient', sid, 'schedule_start', '3');
+                // uci.set('uestc_authclient', sid, 'schedule_end',   '4');
+        
+                // logging
+                // uci.set('uestc_authclient', sid, 'log_rdays', '7');
+                ui.hideModal();
+        
+                // refresh table and open Edit row automatically
+                const nodes = await map.render();
+                nodes.querySelector(
+                    `.cbi-section-table-row[data-sid="${sid}"] .cbi-button-edit`
+                )?.click();
+            });
+
+            // show modal
+            ui.showModal(_('Add new session...'), [
+                E('p', _('Please enter a new session name: (avoid using reserved names like "global")')),
+                inputSid,
+                errorMsg,
+                E('div', { class: 'right' }, [
+                    E('button', { class: 'btn', click: ui.hideModal }, _('Cancel')),
+                    ' ',
+                    btnCreate
+                ])
             ]);
         
-            // Finally, pop up the modal with ALL elements in one array
-            ui.showModal(
-            _('Add New Session...'),
-            [ promptText, inputField, errorDiv, footer ],
-            'cbi-modal'
-            );
+            // focus on the input field
+            inputSid.focus();
         };
-  
+        
+        // Add "New Session" button handler
+        // Add "New Session" handler (fixed ui.showModal signature)
+        // s.handleAdd = function(ev) {
+        //     const mapInstance = this.map;
+            
+        //     ui.showModal(_('Add New Session...'), [
+        //         E('p', _('Please enter a new session name: (avoid using reserved names like "global")')),
+        //         E('input', {
+        //             id:    'new_sid',
+        //             type:  'text',
+        //             style: 'width:100%; margin-top:8px;'
+        //         }),
+        //         E('div', { 'class': 'right' }, [
+        //             E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')),
+        //             ' ',
+        //             E('button', {
+        //                 'class': 'cbi-button cbi-button-positive important',
+        //                 'click': L.bind(function() {
+        //                     const sid = (inputField.value || '').trim();
+        //                     const errorDiv = E('div', {
+        //                         id:    'new_sid_error',
+        //                         style: 'color:red; display:none; margin-top:4px;'
+        //                     });
+        //                     errorDiv.style.display = 'none';
+                            
+        //                     // 1) validate
+        //                     if (!sid) {
+        //                         errorDiv.textContent = _('Session name cannot be empty.');
+        //                         errorDiv.style.display = 'block';
+        //                         return;
+        //                     }
+        //                     if (['global','basic','_new_'].includes(sid)) {
+        //                         errorDiv.textContent = _('This name is reserved, please choose another.');
+        //                         errorDiv.style.display = 'block';
+        //                         return;
+        //                     }
+        //                     if (uci.sections('uestc_authclient','session').some(s=>s['.name']===sid)) {
+        //                         errorDiv.textContent = _('Session name already exists.');
+        //                         errorDiv.style.display = 'block';
+        //                         return;
+        //                     }
+                    
+        //                     // 2) write UCI
+        //                     uci.add('uestc_authclient','session', sid);
+        //                     uci.set('uestc_authclient', sid,     'sid',     sid);
+        //                     uci.set('uestc_authclient', sid,     'enabled', '0');
+        //                     uci.set('uestc_authclient', sid,     'lm_enabled', '0');
+        //                     uci.set('uestc_authclient', sid,     'auth_type',    'srun');
+        //                     uci.set('uestc_authclient', sid,     'auth_mode', 'dx');
+        //                     uci.set('uestc_authclient', sid,     'auth_host',      '10.253.0.237');
+                            
+        //                     // listening
+        //                     uci.set('uestc_authclient', sid, 'listen_interface',      'wan');
+        //                     uci.set('uestc_authclient', sid, 'listen_check_interval', '30');
+        //                     uci.set('uestc_authclient', sid, 'listen_hosts', ['223.5.5.5','119.29.29.29']);
+        
+                    
+        //                     // schedule
+        //                     uci.set('uestc_authclient', sid, 'schedule_enabled',    '0');
+        //                     uci.set('uestc_authclient', sid, 'schedule_start', '3');
+        //                     uci.set('uestc_authclient', sid, 'schedule_end',   '4');
+                    
+        //                     // logging
+        //                     uci.set('uestc_authclient', sid, 'log_rdays', '7');
+                    
+        //                     ui.hideModal();
+                    
+        //                     // 3) refresh and auto‑edit
+        //                     mapInstance.render().then(function(nodes) {
+        //                         setTimeout(function() {
+        //                           const btn = nodes.querySelector(
+        //                             `.cbi-section-table-row[data-sid="${sid}"] .cbi-button-edit`
+        //                           );
+        //                           if (btn) btn.click();
+        //                         }, 0);
+        //                     });
+        //                 }, this)
+        //             }, _('Create'))
+        //         ])
+        //     ]);
+        // };
 
 
          // Edit Modal Title
@@ -351,26 +454,28 @@ return view.extend({
             o.default = 'srun';
             o.rmempty = false;
 
-            o = modalSection.taboption('auth', form.Value, 'auth_username', _('Username'));
-            o.rmempty = false;
-            o.placeholder = _('Required');
-            o.validate = function(section_id, value) { if (!value) return _('Username cannot be empty.'); return true; };
-
-            o = modalSection.taboption('auth', form.Value, 'auth_password', _('Password'));
-            o.password = true;
-            o.rmempty = false;
-            o.placeholder = _('Required');
-            o.validate = function(section_id, value) { if (!value) return _('Password cannot be empty.'); return true; };
-
             o = modalSection.taboption('auth', form.ListValue, 'auth_mode', _('Srun authentication mode'));
             o.value('dx', _('China Telecom'));
             o.value('edu', _('Campus Network'));
             o.default = 'dx';
-            o.depends('type', 'srun');
+            o.depends('auth_type', 'srun');
 
-            o = modalSection.taboption('auth', form.Value, 'host', _('Host'));
+            o = modalSection.taboption('auth', form.Value, 'auth_username', _('Username'));
+            o.placeholder = _('Required');
             o.rmempty = false;
+            o.validate = function(section_id, value) { if (!value) return _('Username cannot be empty.'); return true; };
+
+            o = modalSection.taboption('auth', form.Value, 'auth_password', _('Password'));
+            o.password = true;
+            o.placeholder = _('Required');
+            o.rmempty = false;
+            o.validate = function(section_id, value) { if (!value) return _('Password cannot be empty.'); return true; };
+
+            o = modalSection.taboption('auth', form.Value, 'auth_host', _('Authentication Host'));
+            o.datatype = 'ip4addr';
             o.placeholder = '10.253.0.237';
+            o.rmempty = false;
+            
 
             // Network Tab Options
             o = modalSection.taboption('network', widgets.DeviceSelect, 'listen_interface', _('Interface'));
@@ -379,7 +484,8 @@ return view.extend({
             o.rmempty = false;
 
             o = modalSection.taboption('network', form.DynamicList, 'listen_hosts', _('Heartbeat hosts'));
-            o.datatype = 'host';
+            o.datatype = 'ip4addr'
+            o.default = ["223.5.5.5", "119.29.29.29"];
             o.placeholder = '223.5.5.5';
             o.rmempty = false;
 
@@ -396,13 +502,17 @@ return view.extend({
 
             o = modalSection.taboption('schedule', form.Value, 'schedule_start', _('Disconnection start time (hour)'));
             o.datatype = 'range(0,23)';
+            o.default = '3';
             o.placeholder = '3';
-            o.depends('enabled', '1');
+            o.rmempty = false;
+            o.depends('schedule_enabled', '1');
 
             o = modalSection.taboption('schedule', form.Value, 'schedule_end', _('Disconnection end time (hour)'));
             o.datatype = 'range(0,23)';
+            o.default = '4';
             o.placeholder = '4';
-            o.depends('enabled', '1');
+            o.rmempty = false;
+            o.depends('schedule_enabled', '1');
             o.validate = function(section_id, value) { // section_id here is the schedule section name
                  let start = this.section.formvalue(section_id, 'schedule_start');
                  if (start && value && start === value) {
@@ -415,7 +525,9 @@ return view.extend({
             o = modalSection.taboption('logging', form.Value, 'log_rdays', _('Log retention days (Session)'));
             o.description = _('Specify the number of days to retain session log files.');
             o.datatype = 'uinteger';
+            o.default = '7';
             o.placeholder = '7';
+            o.rmempty = false;
 
             // Log Viewer Tab Options - Inline display
             o = modalSection.taboption('logview', form.Button, '_read_log');
@@ -505,37 +617,6 @@ return view.extend({
 
             return tdEl;
         };
-
-        // // Add custom handleRemove function (no confirmation dialog, no explicit stop)
-        // s.handleRemove = function(section_id) {
-        //     const mapInstance = this.map;
-        //     const viewInstance = self; // No longer needed for callStopSession
-
-        //     // Give immediate feedback? (Optional, as it's just staging)
-        //     // ui.showIndicator('removing-' + section_id, _('Staging removal for session %s...').format(section_id));
-
-        //     // NOTE: Removed explicit callStopSession. Relying on 'Save & Apply'
-        //     // to handle process cleanup/restart. This might leave orphaned
-        //     // processes if only removal is done and Save&Apply doesn't trigger a full restart.
-        //     try {
-        //         // // 1. Remove all related UCI sections (stages the change)
-        //         // let listening_sid = 'listening_session_' + section_id;
-        //         // let schedule_sid = 'schedule_session_' + section_id;
-        //         // let logging_sid = 'logging_session_' + section_id;
-
-        //         uci.remove('uestc_authclient', section_id); // Stage removal of session section
-        //         // uci.remove('uestc_authclient', listening_sid); // Stage removal of listening section
-        //         // uci.remove('uestc_authclient', schedule_sid); // Stage removal of schedule section
-        //         // uci.remove('uestc_authclient', logging_sid); // Stage removal of logging section
-        //         uci.save('uestc_authclient')
-        //             .then(() => mapInstance.render());
-                
-        //     } catch (err) {
-        //         // Hide indicator if shown
-        //         // ui.hideIndicator('removing-' + section_id);
-        //         ui.addNotification(null, E('p', _('Error staging session removal:') + ' ' + err.message));
-        //     }
-        // };
 
         // --- Rendering & Polling --- 
         return m.render().then(L.bind(function(map, nodes) {
