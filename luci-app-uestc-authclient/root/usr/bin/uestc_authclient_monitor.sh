@@ -106,6 +106,7 @@ init_config() {
     # Define files and variables
     ############################
     LAST_LOGIN_FILE="/tmp/uestc_authclient/$SESSION_ID/last_login"
+    NETWORK_STATUS_FILE="/tmp/uestc_authclient/$SESSION_ID/network_status"
 
     # Use the new unified authentication script
     AUTH_SCRIPT="/usr/bin/uestc_authclient_script.sh"
@@ -448,19 +449,38 @@ check_interface_ip() {
 }
 
 #######################################
+# Ping heartbeat hosts
+#######################################
+ping_heartbeat_hosts() {
+    local status_code=0
+    # Check if the heartbeat hosts are reachable
+    for HOST in $HEARTBEAT_HOSTS; do
+        ping -I $INTERFACE -c 1 -W 1 -n $HOST >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            status_code=1  # Host is reachable
+        fi
+    done
+    # Write status code to the network status file
+    echo "$status_code" > $NETWORK_STATUS_FILE 2>/dev/null
+
+    return $status_code  # No hosts reachable
+}
+
+
+#######################################
 # Check network connectivity and handle login if needed
+# Arguments: $1 - is in limited monitoring or not
 #######################################
 check_network_connectivity() {
 
     # Check network connectivity
-    network_reachable=0
-    for HOST in $HEARTBEAT_HOSTS; do
-        ping -I $INTERFACE -c 1 -W 1 -n $HOST >/dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            network_reachable=1
-            break
-        fi
-    done
+    ping_heartbeat_hosts
+    network_reachable=$?
+
+    if [ "$1" -eq 1 ]; then
+        # Skip network check if in limited monitoring
+        return
+    fi
 
     # Network is unreachable case
     if [ "$network_reachable" -eq 0 ]; then
@@ -492,14 +512,8 @@ check_network_connectivity() {
             interface_is_down_reason=""
 
             # Check if network is now reachable after authentication
-            network_reachable=0
-            for HOST in $HEARTBEAT_HOSTS; do
-                ping -I $INTERFACE -c 1 -W 1 -n $HOST >/dev/null 2>&1
-                if [ $? -eq 0 ]; then
-                    network_reachable=1
-                    break
-                fi
-            done
+            ping_heartbeat_hosts
+            network_reachable=$?
             
             if [ "$network_reachable" -eq 0 ]; then
                 # Auth failed to restore network
@@ -586,13 +600,13 @@ main() {
 
         # Check if we should run monitoring based on time window
         check_limited_monitoring
-        if [ $? -eq 1 ]; then
-            sleep $CHECK_INTERVAL
-            continue
-        fi
+        # if [ $? -eq 1 ]; then
+        #     sleep $CHECK_INTERVAL
+        #     continue
+        # fi
 
         # Check network connectivity and handle authentication
-        check_network_connectivity
+        check_network_connectivity $?
 
         # Sleep until next check, if it is backoff mode this var will be greater than CHECK_INTERVAL
         sleep $CURRENT_CHECK_INTERVAL

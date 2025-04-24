@@ -297,26 +297,6 @@ return view.extend({
                 // write UCI
                 // too much UCI calls may add overhead, use default values in UI
                 uci.add('uestc_authclient','session', sid);
-                // still need it here because we cant know sid
-                uci.set('uestc_authclient', sid,     'sid',     sid);
-                // uci.set('uestc_authclient', sid,     'enabled', '0');
-                // uci.set('uestc_authclient', sid,     'lm_enabled', '0');
-                // uci.set('uestc_authclient', sid,     'auth_type',    'srun');
-                // uci.set('uestc_authclient', sid,     'auth_mode', 'dx');
-                // uci.set('uestc_authclient', sid, 'auth_host', '10.253.0.237');
-                
-                // listening
-                // uci.set('uestc_authclient', sid, 'listen_interface',      'vth1');
-                // uci.set('uestc_authclient', sid, 'listen_check_interval', '30');
-                // uci.set('uestc_authclient', sid, 'listen_hosts', ['223.5.5.5','119.29.29.29']);
-
-                // schedule
-                // uci.set('uestc_authclient', sid, 'schedule_enabled',    '0');
-                // uci.set('uestc_authclient', sid, 'schedule_start', '3');
-                // uci.set('uestc_authclient', sid, 'schedule_end',   '4');
-        
-                // logging
-                // uci.set('uestc_authclient', sid, 'log_rdays', '7');
                 ui.hideModal();
         
                 // refresh table and open Edit row automatically
@@ -341,89 +321,6 @@ return view.extend({
             // focus on the input field
             inputSid.focus();
         };
-        
-        // Add "New Session" button handler
-        // Add "New Session" handler (fixed ui.showModal signature)
-        // s.handleAdd = function(ev) {
-        //     const mapInstance = this.map;
-            
-        //     ui.showModal(_('Add New Session...'), [
-        //         E('p', _('Please enter a new session name: (avoid using reserved names like "global")')),
-        //         E('input', {
-        //             id:    'new_sid',
-        //             type:  'text',
-        //             style: 'width:100%; margin-top:8px;'
-        //         }),
-        //         E('div', { 'class': 'right' }, [
-        //             E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')),
-        //             ' ',
-        //             E('button', {
-        //                 'class': 'cbi-button cbi-button-positive important',
-        //                 'click': L.bind(function() {
-        //                     const sid = (inputField.value || '').trim();
-        //                     const errorDiv = E('div', {
-        //                         id:    'new_sid_error',
-        //                         style: 'color:red; display:none; margin-top:4px;'
-        //                     });
-        //                     errorDiv.style.display = 'none';
-                            
-        //                     // 1) validate
-        //                     if (!sid) {
-        //                         errorDiv.textContent = _('Session name cannot be empty.');
-        //                         errorDiv.style.display = 'block';
-        //                         return;
-        //                     }
-        //                     if (['global','basic','_new_'].includes(sid)) {
-        //                         errorDiv.textContent = _('This name is reserved, please choose another.');
-        //                         errorDiv.style.display = 'block';
-        //                         return;
-        //                     }
-        //                     if (uci.sections('uestc_authclient','session').some(s=>s['.name']===sid)) {
-        //                         errorDiv.textContent = _('Session name already exists.');
-        //                         errorDiv.style.display = 'block';
-        //                         return;
-        //                     }
-                    
-        //                     // 2) write UCI
-        //                     uci.add('uestc_authclient','session', sid);
-        //                     uci.set('uestc_authclient', sid,     'sid',     sid);
-        //                     uci.set('uestc_authclient', sid,     'enabled', '0');
-        //                     uci.set('uestc_authclient', sid,     'lm_enabled', '0');
-        //                     uci.set('uestc_authclient', sid,     'auth_type',    'srun');
-        //                     uci.set('uestc_authclient', sid,     'auth_mode', 'dx');
-        //                     uci.set('uestc_authclient', sid,     'auth_host',      '10.253.0.237');
-                            
-        //                     // listening
-        //                     uci.set('uestc_authclient', sid, 'listen_interface',      'wan');
-        //                     uci.set('uestc_authclient', sid, 'listen_check_interval', '30');
-        //                     uci.set('uestc_authclient', sid, 'listen_hosts', ['223.5.5.5','119.29.29.29']);
-        
-                    
-        //                     // schedule
-        //                     uci.set('uestc_authclient', sid, 'schedule_enabled',    '0');
-        //                     uci.set('uestc_authclient', sid, 'schedule_start', '3');
-        //                     uci.set('uestc_authclient', sid, 'schedule_end',   '4');
-                    
-        //                     // logging
-        //                     uci.set('uestc_authclient', sid, 'log_rdays', '7');
-                    
-        //                     ui.hideModal();
-                    
-        //                     // 3) refresh and auto‑edit
-        //                     mapInstance.render().then(function(nodes) {
-        //                         setTimeout(function() {
-        //                           const btn = nodes.querySelector(
-        //                             `.cbi-section-table-row[data-sid="${sid}"] .cbi-button-edit`
-        //                           );
-        //                           if (btn) btn.click();
-        //                         }, 0);
-        //                     });
-        //                 }, this)
-        //             }, _('Create'))
-        //         ])
-        //     ]);
-        // };
-
 
          // Edit Modal Title
          s.modaltitle = function(section_id) {

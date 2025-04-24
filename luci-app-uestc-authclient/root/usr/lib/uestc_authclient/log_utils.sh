@@ -247,7 +247,7 @@ get_logs_by_domain() {
     # Check if log directory exists
     if [ ! -d "$domain_log_dir" ]; then
         echo "$MSG_NO_LOGS_AVAILABLE"
-        return
+        return 1
     fi
     
     # Find all log files and sort them by name (which is by date)
@@ -256,7 +256,7 @@ get_logs_by_domain() {
     # If no log files, return message
     if [ -z "$log_files" ]; then
         echo "$MSG_NO_LOGS_AVAILABLE"
-        return
+        return 1
     fi
     
     # Output the content of all log files
@@ -269,6 +269,8 @@ get_logs_by_domain() {
         cat "$log_file"
         echo "" # Add empty line between log files
     done
+
+    return 0
 }
 
 #######################################
@@ -280,7 +282,7 @@ list_log_domains() {
     # Check if base directory exists
     if [ ! -d "$LOG_BASE_DIR" ]; then
         echo "$MSG_NO_LOGS_AVAILABLE"
-        return
+        return 1
     fi
     
     # Find all directories in the base directory that have logs
@@ -328,15 +330,13 @@ delete_logs_by_domain() {
 #   0 if successful
 #######################################
 delete_logs_all() {
-    local success=0
     
     # Get all domains
     for domain in $(list_log_domains); do
         delete_logs_by_domain "$domain" >/dev/null
-        success=0
     done
     
-    return $success
+    return 0
 }
 
 # Auto-initialize logging when this script is sourced

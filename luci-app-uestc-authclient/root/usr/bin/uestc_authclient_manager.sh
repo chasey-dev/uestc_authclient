@@ -8,6 +8,11 @@
 . /usr/lib/uestc_authclient/log_utils.sh
 . /usr/lib/uestc_authclient/i18n.sh
 . /usr/share/libubox/jshn.sh
+. /lib/functions.sh
+
+# load configuration in one call
+config_load uestc_authclient
+ALL_SESSIONS=$(config_foreach 'echo "$1"' session)
 
 # Monitor script path
 MONITOR_SCRIPT="/usr/bin/uestc_authclient_monitor.sh"
@@ -15,32 +20,14 @@ PIDFILE_DIR="/var/run/uestc_authclient"
 STATE_DIR="/tmp/uestc_authclient"
 
 # Get global logging settings
-LOG_RETENTION_DAYS=$(uci -q get "uestc_authclient.global.log_rdays")
-[ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
+LOG_RETENTION_DAYS=7
+config_get LOG_RETENTION_DAYS "global" log_rdays 7
 
 # Ensure directories exist
 mkdir -p "$PIDFILE_DIR" "$STATE_DIR" 2>/dev/null
 
 # Set log domain to global
 set_log_domain "global"
-
-#######################################
-# Helper: Get all session IDs from config
-# Output: List of session IDs
-#######################################
-get_all_sessions() {
-    local idx=0
-    local sid
-    
-    while true; do
-        sid=$(uci -q get "uestc_authclient.@session[$idx].sid")
-        if [ -z "$sid" ]; then
-            break
-        fi
-        echo "$sid"
-        idx=$((idx + 1))
-    done
-}
 
 #######################################
 # Helper: Get active process ID for session
@@ -83,7 +70,8 @@ start_session() {
     fi
     
     # Check if session is enabled
-    local enabled=$(uci -q get "uestc_authclient.$sid.enabled")
+    local enabled
+    config_get enabled "$sid" enabled 0
     if [ "$enabled" != "1" ]; then
         log_printf "$MSG_SESSION_DISABLED" "$sid"
         return 1
@@ -126,27 +114,12 @@ stop_session() {
         # Remove PID file
         rm -f "$PIDFILE_DIR/$sid.pid"
         log_printf "$MSG_SESSION_STOPPED" "$sid" "$pid"
+        
+        # Remove network status file
+        rm -f "$STATE_DIR/$sid/network_status"
         return 0
     else
         log_printf "$MSG_SESSION_NOT_RUNNING" "$sid"
-        return 1
-    fi
-}
-
-#######################################
-# Validate if session exists
-# Arguments:
-#   $1 - Session ID
-# Output: 1 - exist
-#         0 - not exist
-#######################################
-validate_session() {
-    local sid="$1"
-    local enabled=$(uci -q get "uestc_authclient.$sid.enabled")
-
-    if [ -z "$enabled" ]; then
-        return 0
-    else
         return 1
     fi
 }
@@ -161,29 +134,18 @@ add_status_json_fields() {
     local running=0
     local pid=""
     local network_up=0
+    local network_status_file="$STATE_DIR/$sid/network_status"
     local last_login=0
     local last_login_file="$STATE_DIR/$sid/last_login"
-
+    
     # load last_login if present
     [ -f "$last_login_file" ] && last_login=$(cat "$last_login_file")
 
     # check running state
     if pid=$(get_session_pid "$sid"); then
         running=1
-
-        # test network via heartbeat hosts
-        local interface
-        local hosts
-        interface=$(uci -q get "uestc_authclient.$sid.listen_interface" || echo "wan")
-        hosts=$(uci -q get "uestc_authclient.$sid.listen_hosts" \
-                 | tr ' ' '\n' | xargs)  # split into lines
-
-        for h in $hosts; do
-          if ping -I "$interface" -c1 -W1 "$h" >/dev/null 2>&1; then
-            network_up=1
-            break
-          fi
-        done
+        # check if network is up by file
+        [ -f "$network_status_file" ] && read -r network_up <"$network_status_file"
     fi
 
     # Now add fields into JSON
@@ -222,11 +184,8 @@ compose_status_json() {
 start_all_sessions() {
     log_message "$MSG_STARTING_ALL_SESSIONS"
     
-    for sid in $(get_all_sessions); do
-        local enabled=$(uci -q get "uestc_authclient.$sid.enabled")
-        if [ "$enabled" = "1" ]; then
-            start_session "$sid"
-        fi
+    for sid in $ALL_SESSIONS; do
+        start_session "$sid"
     done
 }
 
@@ -236,7 +195,7 @@ start_all_sessions() {
 stop_all_sessions() {
     log_message "$MSG_STOPPING_ALL_SESSIONS"
     
-    for sid in $(get_all_sessions); do
+    for sid in $ALL_SESSIONS; do
         if get_session_pid "$sid" >/dev/null; then
             stop_session "$sid"
         fi
@@ -286,10 +245,7 @@ case "$1" in
         else
         # 2b) all‐session mode: build an array of objects
         json_add_array "sessions"
-        for sid in $(get_all_sessions); do
-            # skip if the session name is invalid
-            validate_session "$sid" && continue
-
+        for sid in $ALL_SESSIONS; do
             json_add_object      # open { … }
             add_status_json_fields "$sid"
             json_close_object   # close }
@@ -302,17 +258,8 @@ case "$1" in
         ;;
 
     log)
-        validate_session "$2"
-        # get logs by domain or get global logs if no session id or "global"
-        if [ $? -eq 1 ]; then
-            get_logs_by_domain "$2"
-        elif [ -z "$2" ] || [ "$2" = "global" ]; then
-            # check if global log file needs to be cleaned
-            log_clean "$LOG_RETENTION_DAYS" 24
-            get_logs_by_domain "$2"
-        fi
+        get_logs_by_domain "$2"
         ;;
-
     *)
         echo "Usage: $0 {start|stop|restart|status|log} [session_id]"
         exit 1
