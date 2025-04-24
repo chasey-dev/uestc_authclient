@@ -1,47 +1,54 @@
 ###############################################################################
 # Basic Settings
 ###############################################################################
-config system 'basic'
+config system 'global'
     option enabled '0'
-    option limited_monitoring '1'
+    # global logging settings
+    option log_rdays '7'
 
 ###############################################################################
-# Authentication Settings (CT / Srun)
+# Client Sessions
 ###############################################################################
-config auth 'auth'
-    # Authentication method selection
-    option auth_type 'ct'
 
-    # CT client settings
-    option ct_username ''
-    option ct_password ''
-    option ct_host '172.25.249.64'
-
-    # Srun client settings
-    option srun_username ''
-    option srun_password ''
-    option srun_auth_mode 'dx'    # e.g. 'dx', 'edu'
-    option srun_host '10.253.0.237'
-
-###############################################################################
-# Network Settings
-###############################################################################
-config system 'listening'
-    option interface 'wan'
-    list heartbeat_hosts '223.5.5.5'
-    list heartbeat_hosts '119.29.29.29'
-    option check_interval '30'
-
-###############################################################################
-# Logging Settings
-###############################################################################
-config system 'logging'
-    option retention_days '7'
-
-###############################################################################
-# Scheduled Disconnection
-###############################################################################
-config system 'schedule'
+config session 'srun'
+    option sid 'srun'
     option enabled '1'
-    option disconnect_start '3'
-    option disconnect_end '4'
+    option lm_enabled '1'   
+    option auth_type 'srun'
+    option auth_username ''
+    option auth_password ''
+    option auth_mode 'dx' # this is for srun clients only
+    option auth_host '10.253.0.237'
+
+    option listen_interface 'wan'
+    option listen_check_interval '30'
+    list listen_hosts '223.5.5.5'
+    list listen_hosts '119.29.29.29'
+
+    option schedule_enabled '0'
+    # optional if enable is 0
+    option schedule_start '3'
+    option schedule_end '4'
+
+    option log_rdays '7'
+
+config session 'ct'
+    option sid 'ct'
+    option enabled '1'
+    option lm_enabled '1'   
+    option auth_type 'ct'
+    option auth_username ''
+    option auth_password ''
+    option auth_host '10.253.0.237'
+
+    option listen_interface 'wan'
+    option listen_check_interval '30'
+    list listen_hosts '223.5.5.5'
+    list listen_hosts '119.29.29.29'
+
+    option schedule_enabled '0'
+    # optional if enable is 0
+    option schedule_start '3'
+    option schedule_end '4'
+    
+    option log_rdays '7'

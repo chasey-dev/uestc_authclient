@@ -9,43 +9,107 @@
 . /usr/lib/uestc_authclient/i18n.sh
 
 #######################################
+# Global – session id is mandatory
+#######################################
+SESSION_ID="$1"
+[ -z "$SESSION_ID" ] && {
+    echo "Usage: $0 <session_id>" >&2
+    exit 1
+}
+
+log_to_global() {
+    set_log_domain "global"
+    log_printf "$MSG_MONITOR_SCRIPT_EXIT (%s)" "$SESSION_ID"
+}
+trap log_to_global EXIT
+
+#######################################
+# uci_get – Handle uci config gets safely
+# uci_get <config> <section> <option> <default>
+#######################################
+uci_get() {
+    local _val
+    _val=$(uci -q get "$1.$2.$3")
+    if [ -n "$_val" ]; then
+        printf "%s\n" "$_val"
+    else
+        printf "%s\n" "$4"
+    fi
+}
+
+#######################################
 # Load configuration and initialize variables
 #######################################
 init_config() {
-    # Get client configuration
-    AUTH_TYPE=$(uci get uestc_authclient.auth.auth_type 2>/dev/null)
-    [ -z "$AUTH_TYPE" ] && AUTH_TYPE="ct"  # Default to ct client
-
-    CHECK_INTERVAL=$(uci get uestc_authclient.listening.check_interval 2>/dev/null)
-    [ -z "$CHECK_INTERVAL" ] && CHECK_INTERVAL=30  # Default check interval is 30 seconds
-
-    # Get heartbeat hosts list
-    HEARTBEAT_HOSTS=$(uci -q get uestc_authclient.listening.heartbeat_hosts)
-    [ -z "$HEARTBEAT_HOSTS" ] && HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
-
-    INTERFACE=$(uci get uestc_authclient.listening.interface 2>/dev/null)
-    [ -z "$INTERFACE" ] && INTERFACE="wan"
-
-    LOG_RETENTION_DAYS=$(uci get uestc_authclient.logging.retention_days 2>/dev/null)
-    [ -z "$LOG_RETENTION_DAYS" ] && LOG_RETENTION_DAYS=7
-
-    # Limited monitoring
-    LIMITED_MONITORING=$(uci get uestc_authclient.basic.limited_monitoring 2>/dev/null)
-    [ -z "$LIMITED_MONITORING" ] && LIMITED_MONITORING=1
-
-    # Scheduled disconnect configuration
-    scheduled_disconnect_enabled=$(uci get uestc_authclient.schedule.enabled 2>/dev/null)
-    [ -z "$scheduled_disconnect_enabled" ] && scheduled_disconnect_enabled=0
-
-    scheduled_disconnect_start=$(uci get uestc_authclient.schedule.disconnect_start 2>/dev/null)
-    [ -z "$scheduled_disconnect_start" ] && scheduled_disconnect_start=3
+    ############################
+    # basic / enable check
+    ############################
+    ENABLED=$(uci_get uestc_authclient "$SESSION_ID" enabled 0)
+    if [ "$ENABLED" != "1" ]; then
+        # log_printf "$MSG_SESSION_DISABLED %s" "$SESSION_ID"
+        exit 0    # exit gracefully
+    fi
     
-    scheduled_disconnect_end=$(uci get uestc_authclient.schedule.disconnect_end 2>/dev/null)
-    [ -z "$scheduled_disconnect_end" ] && scheduled_disconnect_end=4
+    ############################
+    # required fields
+    ############################
+    AUTH_TYPE=$(uci_get uestc_authclient "$SESSION_ID" auth_type "")
+    USERNAME=$(uci_get uestc_authclient "$SESSION_ID" auth_username "")
+    PASSWORD=$(uci_get uestc_authclient "$SESSION_ID" auth_password "")
+    HOST=$(uci_get uestc_authclient "$SESSION_ID" auth_host "")
 
+    if [ -z "$AUTH_TYPE" ] || [ -z "$USERNAME" ] || \
+       [ -z "$PASSWORD" ] || [ -z "$HOST" ]; then
+        log_printf "$MSG_USERNAME_PASSWORD_NOT_SET"
+        exit 1
+    fi
+
+    # Set log domain
+    set_log_domain "$SESSION_ID"
+
+    ############################
+    # optional with defaults
+    ############################
+    LIMITED_MONITORING=$(uci_get uestc_authclient "$SESSION_ID" lm_enabled 0)
+
+    # listening block
+    CHECK_INTERVAL=$(uci_get uestc_authclient "$SESSION_ID" listen_check_interval 30)
+    INTERFACE=$(uci_get uestc_authclient "$SESSION_ID" listen_interface wan)
+    HEARTBEAT_HOSTS=$(uci -q get "uestc_authclient.$SESSION_ID.listen_hosts") || \
+        HEARTBEAT_HOSTS="223.5.5.5 119.29.29.29"
+
+    # logging block
+    LOG_RETENTION_DAYS=$(uci_get uestc_authclient "$SESSION_ID" log_rdays 7)
+    
+    # schedule block
+    scheduled_disconnect_enabled=$(uci_get uestc_authclient "$SESSION_ID" schedule_enabled 0)
+    scheduled_disconnect_start=$(uci_get uestc_authclient "$SESSION_ID" schedule_start 3)
+    scheduled_disconnect_end=$(uci_get uestc_authclient "$SESSION_ID"   schedule_end   4)
+
+    ############################
+    # build AUTH_PARAMS
+    ############################
+    # TODO: add MAX_WAIT setting in cbi
+    MAX_WAIT=30
+    if [ "$AUTH_TYPE" = "ct" ]; then
+        AUTH_PARAMS="-t ct   -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -w $MAX_WAIT"
+    elif [ "$AUTH_TYPE" = "srun" ]; then
+        AUTH_MODE=$(uci_get uestc_authclient "$SESSION_ID" auth_mode dx)
+        AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD \
+                     -m $AUTH_MODE -w $MAX_WAIT"
+    else
+        log_printf "$MSG_UNKNOWN_CLIENT_TYPE" "$AUTH_TYPE"
+        exit 1
+    fi
+
+    ############################
     # Define files and variables
-    LAST_LOGIN_FILE="/tmp/uestc_authclient/last_login"
-    
+    ############################
+    LAST_LOGIN_FILE="/tmp/uestc_authclient/$SESSION_ID/last_login"
+
+    # Use the new unified authentication script
+    AUTH_SCRIPT="/usr/bin/uestc_authclient_script.sh"
+
     # Define maximum consecutive failures
     MAX_FAILURES=3  # Maximum failure count
     failure_count=0
@@ -61,32 +125,6 @@ init_config() {
     
     limited_monitoring_notice_flag=0  # Flag to prevent loop logging
     in_backoff_mode=0  # Flag to indicate if we're in backoff mode
-    
-    # Use the new unified authentication script
-    AUTH_SCRIPT="/usr/bin/uestc_authclient_script.sh"
-    MAX_WAIT=30
-    # Get authentication parameters based on client type
-    if [ "$AUTH_TYPE" = "ct" ]; then
-        USERNAME=$(uci get uestc_authclient.auth.ct_username 2>/dev/null)
-        PASSWORD=$(uci get uestc_authclient.auth.ct_password 2>/dev/null)
-        HOST=$(uci get uestc_authclient.auth.ct_host 2>/dev/null)
-        [ -z "$HOST" ] && HOST="172.25.249.64"
-        AUTH_PARAMS="-t ct -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -w $MAX_WAIT"
-    elif [ "$AUTH_TYPE" = "srun" ]; then
-        USERNAME=$(uci get uestc_authclient.auth.srun_username 2>/dev/null)
-        PASSWORD=$(uci get uestc_authclient.auth.srun_password 2>/dev/null)
-        AUTH_MODE=$(uci get uestc_authclient.auth.srun_auth_mode 2>/dev/null)
-        [ -z "$AUTH_MODE" ] && AUTH_MODE="dx"
-        HOST=$(uci get uestc_authclient.auth.srun_host 2>/dev/null)
-        [ -z "$HOST" ] && HOST="10.253.0.237"
-        AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -m $AUTH_MODE -w $MAX_WAIT"
-    else
-        log_printf "$MSG_UNKNOWN_CLIENT_TYPE %s" "$AUTH_TYPE"
-        exit 1
-    fi
-
-    # Set log domain
-    set_log_domain "$AUTH_TYPE"
 
     log_message "$MSG_MONITOR_SCRIPT_STARTED"
 
@@ -129,10 +167,12 @@ handle_auth() {
             if [ "$auth_exit_code" -eq 0 ]; then
                 # Login successful, record login time as Unix timestamp
                 mkdir -p "$(dirname "$LAST_LOGIN_FILE")" 2>/dev/null
-                date +%s > $LAST_LOGIN_FILE
+                date +%s > "$LAST_LOGIN_FILE"
                 log_printf "$MSG_LOGIN_SUCCESS" "$AUTH_TYPE"
+                return 0
             else
                 log_printf "$MSG_LOGIN_FAILURE" "$AUTH_TYPE"
+                return 1
             fi
             ;;
             
@@ -148,7 +188,6 @@ handle_auth() {
             return 1
             ;;
     esac
-
 }
 
 #######################################
