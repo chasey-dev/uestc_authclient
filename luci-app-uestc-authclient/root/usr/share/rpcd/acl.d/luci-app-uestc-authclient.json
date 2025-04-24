@@ -1,0 +1,18 @@
+{
+	"luci-app-uestc-authclient": {
+		"description": "Grant access to uestc_authclient configuration and management script",
+		"read": {
+			"uci": [ "uestc_authclient" ],
+			"file": {
+				"/usr/bin/uestc_authclient_manager.sh": [ "exec" ],
+                "/etc/init.d/uestc_authclient": [ "exec" ] 
+			},
+            "ubus": {
+                "luci": [ "setInitAction" ]
+            }
+		},
+		"write": {
+			"uci": [ "uestc_authclient" ]
+		}
+	}
+} 

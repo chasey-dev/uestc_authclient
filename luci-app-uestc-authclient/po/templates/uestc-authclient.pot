@@ -1,0 +1,332 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-uestc-authclient\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Error executing command:"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "None"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "UESTC Authentication Client"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "This page displays the current status of the UESTC authentication client. Please adjust other settings as needed."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Settings"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Status & Control"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Global Settings"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Service Status"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Running"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Not running"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Enable on startup"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Check to run the service automatically at system startup."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Global Logs"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Loading..."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Confirm Action"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Start the UESTC Auth service?"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Stop the UESTC Auth service?"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Cancel"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Start Service"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Stop Service"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Restart Service"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Restart the UESTC Auth service?"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Log retention days (Global)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Specify the number of days to retain global log files."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Authentication Sessions"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Add new session..."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Please enter a new session name: (avoid using reserved names like "global")"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Session name cannot be empty."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "This name is reserved, please choose another."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Session name already exists."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Create"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Name"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Enabled"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Status"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Network Status"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Last Login Time"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Session Configuration"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Authentication Settings"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Network Settings"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Scheduled Disconnection"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Logging Settings"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Log Viewer"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Limited Monitoring"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Check to limit monitoring and reconnection attempts to within 10 minutes around the last login time."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Authentication method"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Srun authentication method (go-nd-portal)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "CT authentication method (qsh-telecom-autologin)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Username"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Username cannot be empty."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Password"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Password cannot be empty."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Srun authentication mode"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "China Telecom"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Campus Network"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Host"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Interface"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Heartbeat hosts"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Check interval (seconds)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Enable scheduled disconnection"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Disconnection start time (hour)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Disconnection end time (hour)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Disconnection start time and end time cannot be the same!"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Log retention days (Session)"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Specify the number of days to retain session log files."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Read / Reread log file"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Loading logs..."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "No logs available"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Failed to load logs."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Press button to load logs."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Edit"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Start this session"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Start"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Stop this session"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Stop"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Restart this session"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Restart"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Executing action..."
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Connected"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Disconnected"
+msgstr ""
+
+#: luci-app-uestc-authclient/htdocs/luci-static/resources/view/uestc-authclient/overview.js
+msgid "Unknown"
+msgstr "" 
