@@ -167,7 +167,7 @@ return view.extend({
         o = s.taboption('info', form.Button, '_show_global_log');
         o.title = _('Global Logs');
         o.inputstyle = 'apply';
-        o.inputtitle = _('Read / Reread log file');
+        o.inputtitle = _('Read/Reread log file');
         o.onclick = L.bind(function(ev) {
             //  console.log('Global log button clicked');
              let logDisplay = document.getElementById('global_log_display_area');
@@ -456,7 +456,7 @@ return view.extend({
             // Log Viewer - Inline display
             o = modalSection.taboption('logging', form.Button, '_read_log');
             o.title = _('Log Viewer');
-            o.inputtitle = _('Read / Reread log file');
+            o.inputtitle = _('Read/Reread log file');
             o.inputstyle = 'apply';
             o.onclick = L.bind(function(sid, ev) {
                 // console.log('Session log button clicked for:', sid);

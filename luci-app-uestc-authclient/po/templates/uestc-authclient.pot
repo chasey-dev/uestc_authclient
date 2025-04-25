@@ -44,6 +44,9 @@ msgstr ""
 msgid "Restart Service"
 msgstr ""
 
+msgid "Confirm Action"
+msgstr ""
+
 msgid "Restart the UESTC Auth service?"
 msgstr ""
 
@@ -54,7 +57,7 @@ msgstr ""
 # Log content
 # --------------------------------------------------------------
 
-msgid "Read \/ Reread log file"
+msgid "Read/Reread log file"
 msgstr ""
 
 msgid "Loading logs..."
@@ -130,7 +133,7 @@ msgstr ""
 # Hint
 # --------------------------------------------------------------
 
-msgid "Start\/Stop this session"
+msgid "Start/Stop this session"
 msgstr ""
 
 msgid "Restart this session"

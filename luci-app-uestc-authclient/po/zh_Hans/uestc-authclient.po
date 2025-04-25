@@ -41,6 +41,9 @@ msgstr "勾选后，服务将在系统启动时自动运行。"
 msgid "Restart Service"
 msgstr "重启服务"
 
+msgid "Confirm Action"
+msgstr "确认当前操作"
+
 msgid "Restart the UESTC Auth service?"
 msgstr "是否重启服务？"
 
@@ -51,8 +54,8 @@ msgstr "全局日志"
 # Log content
 # --------------------------------------------------------------
 
-msgid "Read \/ Reread log file"
-msgstr "读取 \/ 刷新日志"
+msgid "Read/Reread log file"
+msgstr "读取/刷新日志"
 
 msgid "Loading logs..."
 msgstr "正读取日志..."
@@ -127,8 +130,8 @@ msgstr "未连接"
 # Hint
 # --------------------------------------------------------------
 
-msgid "Start\/Stop this session"
-msgstr "启动\/停止当前配置"
+msgid "Start/Stop this session"
+msgstr "启动/停止当前配置"
 
 msgid "Restart this session"
 msgstr "重启当前配置"
