@@ -276,6 +276,10 @@ stop_all_sessions() {
             stop_session "$sid"
         fi
     done
+
+    # force release all locks
+    # since uci config update beforce sessions stop
+    rm -f "$IFACE_LOCK_DIR"/*.lock
 }
 
 #######################################
