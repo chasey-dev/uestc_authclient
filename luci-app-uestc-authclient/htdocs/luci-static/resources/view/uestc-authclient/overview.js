@@ -241,6 +241,8 @@ return view.extend({
         o = s.option(form.Flag, 'enabled', _('Enabled'));
         o.editable = true;
 
+        o = s.option(form.Value, 'listen_interface', _('Interface'));
+
         o = s.option(form.DummyValue, '_cfg_status', _('Status'));
 
         o = s.option(form.DummyValue, '_cfg_network', _('Network Status'));
