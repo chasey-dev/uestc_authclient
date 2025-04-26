@@ -208,6 +208,9 @@ msgstr ""
 msgid "Select the interface for authentication. (Linux Interface, Refers to Device in Openwrt.)"
 msgstr ""
 
+msgid "This interface is already in use in another session!"
+msgstr ""
+
 msgid "Heartbeat hosts"
 msgstr ""
 

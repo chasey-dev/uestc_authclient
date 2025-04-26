@@ -205,6 +205,9 @@ msgstr "网络设置"
 msgid "Select the interface for authentication. (Linux Interface, Refers to Device in Openwrt.)"
 msgstr "选择用于认证的网络接口。（Linux 接口，在 OpenWrt 中称作 Device）"
 
+msgid "This interface is already in use in another session!"
+msgstr "该接口已经被其他配置占用！"
+
 msgid "Heartbeat hosts"
 msgstr "心跳检测地址"
 

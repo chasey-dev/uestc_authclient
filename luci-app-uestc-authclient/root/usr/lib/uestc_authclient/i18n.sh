@@ -73,6 +73,7 @@ init_i18n() {
         MSG_SESSION_DISABLED="配置 %s 已禁用"
         MSG_STARTING_ALL_SESSIONS="正在启动所有已启用的配置。"
         MSG_STOPPING_ALL_SESSIONS="正在停止所有正在运行的配置。"
+        MSG_INTERFACE_LOCKED="接口 %s 已经被使用。配置 %s 无法启动。"
 
     else
         # English message dictionary (default)
@@ -135,6 +136,7 @@ init_i18n() {
         MSG_SESSION_DISABLED="Session %s is disabled"
         MSG_STARTING_ALL_SESSIONS="Starting all enabled sessions"
         MSG_STOPPING_ALL_SESSIONS="Stopping all running sessions"
+        MSG_INTERFACE_LOCKED="Interface %s is already in use. Stopping session %s ..."
     
     fi
 }

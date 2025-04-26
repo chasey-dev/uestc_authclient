@@ -399,6 +399,13 @@ return view.extend({
             o.description = _('Select the interface for authentication. (Linux Interface, Refers to Device in Openwrt.)')
             o.noaliases = true; // Typically want physical devices
             o.default = 'wan';
+            o.validate = function(section_id, value) {
+                            let usedIface = uci.sections('uestc_authclient', 'session')
+                                                        // get interfaces of enabled sessions
+                                                        .filter(s => s['listen_interface'] && s['.name'] !== section_id && s['enabled'] === '1')
+                                                        .map(s => s['listen_interface']);
+                            return usedIface.includes(value) ? _('This interface is already in use in another session!') : true;
+                        };
             o.rmempty = false;
 
             o = modalSection.taboption('network', form.DynamicList, 'listen_hosts', _('Heartbeat hosts'));

@@ -19,14 +19,18 @@ MONITOR_SCRIPT="/usr/bin/uestc_authclient_monitor.sh"
 PIDFILE_DIR="/var/run/uestc_authclient"
 STATE_DIR="/tmp/uestc_authclient"
 
+# Lock path for interfaces
+LOCK_DIR="$STATE_DIR/lock"
+IFACE_LOCK_DIR="$LOCK_DIR/interface"
+
 # Get global logging settings
 LOG_RETENTION_DAYS=7
 config_get LOG_RETENTION_DAYS "global" log_rdays 7
 
 # Ensure directories exist
-mkdir -p "$PIDFILE_DIR" "$STATE_DIR" 2>/dev/null
+mkdir -p "$PIDFILE_DIR" "$STATE_DIR" "$IFACE_LOCK_DIR" 2>/dev/null
 
-# Set log domain to global
+# Set log domain to globalex
 set_log_domain "global"
 
 #######################################
@@ -48,10 +52,66 @@ get_session_pid() {
         else
             # Clean up stale PID file
             rm -f "$pidfile"
+            # Release the lock if exists
+            unlock_iface "$sid"
         fi
     fi
     return 1
 }
+
+
+#######################################
+# Helper: Lock interface by sid
+# Arguments:
+#   $1 - Session ID
+# Output: 0 - success
+#         1 - fail  
+#######################################
+tryLock_iface() {
+    local sid="$1"
+    local interface
+    config_get interface "$sid" listen_interface ""
+    local iface_lock="$IFACE_LOCK_DIR/$interface.lock"
+    # Check if the lock file exists
+    if [ -e "$iface_lock" ]; then
+        # If the lock file exists, check if it's locked by another session
+        local locked_by
+        locked_by=$(cat "$iface_lock")  # Read the session ID currently holding the lock
+        
+        if [ "$locked_by" != "$sid" ]; then
+            return 1  # Exit if the lock is held by another session
+        fi
+    fi
+    
+    # Lock the interface by writing the current session ID into the lock file
+    echo "$sid" > "$iface_lock"
+    return 0
+}
+
+#######################################
+# Helper: Unlock interface by sid
+# Arguments:
+#   $1 - Session ID
+#######################################
+unlock_iface() {
+    local sid="$1"
+    local interface
+    local iface_lock
+
+    # get iface by session id
+    config_get interface "$sid" listen_interface ""
+    iface_lock="$IFACE_LOCK_DIR/$interface.lock"
+
+    # Remove iface locked by current session
+    if [ -e "$iface_lock" ]; then
+        local locked_by
+        locked_by=$(cat "$iface_lock")
+        if [ "$locked_by" == "$sid" ]; then
+            rm -f "$iface_lock"
+        fi
+    fi
+}
+
 
 #######################################
 # Start a specific session monitor
@@ -77,6 +137,15 @@ start_session() {
         return 1
     fi
     
+    tryLock_iface "$sid"
+    if [ "$?" -eq 1 ]; then
+        local interface
+        config_get interface "$sid" listen_interface ""
+
+        log_printf "$MSG_INTERFACE_LOCKED" "$interface" "$sid"
+        return 1
+    fi
+
     # Start the monitor process in background
     "$MONITOR_SCRIPT" "$sid" >/dev/null 2>&1 &
     local pid=$!
@@ -98,7 +167,8 @@ start_session() {
 stop_session() {
     local sid="$1"
     local pid
-    
+    local exit_code=0
+
     if pid=$(get_session_pid "$sid"); then
         # Kill the process
         kill "$pid" 2>/dev/null
@@ -110,18 +180,24 @@ stop_session() {
             kill -9 "$pid" 2>/dev/null
             sleep 1
         fi
-        
-        # Remove PID file
-        rm -f "$PIDFILE_DIR/$sid.pid"
+
         log_printf "$MSG_SESSION_STOPPED" "$sid" "$pid"
-        
-        # Remove network status file
-        rm -f "$STATE_DIR/$sid/network_status"
-        return 0
+        exit_code=0
     else
         log_printf "$MSG_SESSION_NOT_RUNNING" "$sid"
-        return 1
+        exit_code=1
     fi
+        
+    # Remove PID file
+    rm -f "$PIDFILE_DIR/$sid.pid"
+
+    # Remove network status file
+    rm -f "$STATE_DIR/$sid/network_status"
+
+    # Release the iface locked by current session
+    unlock_iface "$sid"
+
+    return $exit_code
 }
 
 #######################################
