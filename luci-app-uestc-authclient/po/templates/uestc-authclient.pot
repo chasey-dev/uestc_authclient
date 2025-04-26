@@ -78,6 +78,12 @@ msgstr ""
 msgid "Specify the number of days to retain global log files."
 msgstr ""
 
+msgid "Global logs have been successfully cleared."
+msgstr ""
+
+msgid "Error clearing global logs: "
+msgstr ""
+
 # --------------------------------------------------------------
 # Session: add & validate
 # --------------------------------------------------------------
@@ -257,6 +263,15 @@ msgid "Log retention days (Session)"
 msgstr ""
 
 msgid "Specify the number of days to retain session log files."
+msgstr ""
+
+msgid "Clean Logs"
+msgstr ""
+
+msgid "Logs of session %s have been successfully cleared."
+msgstr ""
+
+msgid "Error clearing logs of session %s: "
 msgstr ""
 
 # --------------------------------------------------------------

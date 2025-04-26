@@ -75,6 +75,12 @@ msgstr "日志保留天数（全局）"
 msgid "Specify the number of days to retain global log files."
 msgstr "指定全局的日志文件保留天数，超过此天数的日志将被清除。"
 
+msgid "Global logs have been successfully cleared."
+msgstr "成功清空全局日志。"
+
+msgid "Error clearing global logs: "
+msgstr "清空全局日志时出错："
+
 # --------------------------------------------------------------
 # Session: add & validate
 # --------------------------------------------------------------
@@ -256,6 +262,15 @@ msgstr "日志保留天数（当前配置）"
 msgid "Specify the number of days to retain session log files."
 msgstr "指定当前配置的日志文件保留天数，超过此天数的日志将被清除。"
 
+msgid "Clean Logs"
+msgstr "清理日志"
+
+msgid "Logs of session %s have been successfully cleared."
+msgstr "成功删除配置 %s 的日志。"
+
+msgid "Error clearing logs of session %s: "
+msgstr "删除配置 %s 的日志时出错："
+
 # --------------------------------------------------------------
 # Common
 # --------------------------------------------------------------
@@ -264,18 +279,3 @@ msgstr "执行命令时出错："
 
 msgid "Loading..."
 msgstr "加载中"
-
-# --------------------------------------------------------------
-#~ UNUSED
-#~ msgid "Overview"
-#~ msgstr "概览"
-#~ msgid "Configuration has been saved and the service has been restarted!"
-#~ msgstr "配置已保存，服务已重启！"
-#~ msgid "Service Status"
-#~ msgstr "服务状态"
-#~ msgid "Control"
-#~ msgstr "控制"
-#~ msgid "Logs"
-#~ msgstr "日志"
-#~ msgid "Clear Logs"
-#~ msgstr "清除日志"

@@ -461,6 +461,7 @@ ping_heartbeat_hosts() {
         fi
     done
     # Write status code to the network status file
+    mkdir -p "$(dirname "$NETWORK_STATUS_FILE")" 2>/dev/null
     echo "$status_code" > $NETWORK_STATUS_FILE 2>/dev/null
 
     return $status_code  # No hosts reachable

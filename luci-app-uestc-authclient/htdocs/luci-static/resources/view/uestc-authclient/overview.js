@@ -11,43 +11,67 @@
 
 // Helper function to execute manager script commands
 function callManager(command, sid) {
-    let args = [command];
-    if (sid) {
-        args.push(sid);
+    let args = [];
+    let cmdParts = command.split(' '); // Split the command by space for secondary commands (e.g., 'clean log')
+
+    // First part of the command is the main command (e.g., 'clean')
+    args.push(cmdParts[0]);
+    
+    // If there is a second part (e.g., 'log' or 'all'), append it
+    if (cmdParts[1]) {
+        args.push(cmdParts[1]);
     }
-    // Need to handle potential errors and parse JSON for status
+
+    if (sid) {
+        args.push(sid);  // Add session ID if provided
+    }
+
+    // Execute the manager script
     return fs.exec('/usr/bin/uestc_authclient_manager.sh', args).then(function(res) {
-        // console.log('callManager response for:', command, args, 'Code:', res.code, 'Stdout:', res.stdout, 'Stderr:', res.stderr); // DEBUG
+        // Check for non-zero exit code and handle errors
         if (res.code !== 0) {
             throw new Error('Manager script execution failed: ' + (res.stderr || res.stdout || 'Unknown error'));
         }
-        if (command === 'status') {
-            try {
-                // manager.sh status returns JSON like { "sessions": [...] } 
-                let parsedData = JSON.parse(res.stdout);
-                // Extract the sessions array, default to empty array if structure is wrong
-                if (parsedData && Array.isArray(parsedData.sessions)) {
-                    return parsedData.sessions;
-                } else {
-                    console.warn('Received status data is not in the expected { sessions: [...] } format:', parsedData);
-                    return []; // Return empty array to avoid breaking downstream code
+
+        // Handle different commands with a switch-case
+        switch (cmdParts[0]) {
+            case 'status':
+                try {
+                    // manager.sh status returns JSON like { "sessions": [...] }
+                    let parsedData = JSON.parse(res.stdout);
+                    // Check if the expected "sessions" array is present
+                    if (parsedData && Array.isArray(parsedData.sessions)) {
+                        return parsedData.sessions;
+                    } else {
+                        console.warn('Received status data is not in the expected { sessions: [...] } format:', parsedData);
+                        return []; // Return an empty array to avoid downstream errors
+                    }
+                } catch (e) {
+                    console.error('Failed to parse JSON status:', res.stdout, e);
+                    throw new Error('Failed to parse status JSON: ' + e.message);
                 }
-            } catch (e) {
-                console.error('Failed to parse JSON status:', res.stdout, e);
-                throw new Error('Failed to parse status JSON: ' + e.message);
-            }
+
+            case 'log':
+                // log command returns plain text
+                return res.stdout || '';
+
+            case 'start':
+            case 'stop':
+            case 'restart':
+            case 'clean':
+                // For start/stop/restart/clean, just check exit code (handled above)
+                return true;
+
+            default:
+                throw new Error(`Unknown command: ${command}`);
         }
-         if (command === 'log') {
-            // log command returns plain text
-            return res.stdout || '';
-        }
-        // For start/stop/restart, just check exit code (handled above)
-        return true;
     }).catch(function(err) {
+        // Handle errors by notifying the user
         ui.addNotification(null, E('p', _('Error executing command:') + ' ' + err.message));
         return Promise.reject(err); // Propagate rejection
     });
 }
+
 
 return view.extend({
     // For formatting timestamps later
@@ -84,6 +108,14 @@ return view.extend({
 
     callGetLogs: function(sid) {
         return callManager('log', sid);
+    },
+
+    callCleanLogs: function(sid) {
+        return callManager('clean log', sid);
+    },
+
+    callCleanSession: function(sid) {
+        return callManager('clean all', sid);
     },
 
     load: function() {
@@ -163,69 +195,97 @@ return view.extend({
             ]);
         }, this);
 
+        // display log text area
+        function toggleLogDisplay(section_id) {
+            let logDisplay = document.getElementById(section_id + '_log_display_area');
+            if (logDisplay) {
+                if (logDisplay.style.display === 'none') {
+                    logDisplay.style.display = 'block';
+                    loadLogs(section_id, logDisplay);  // load logs
+                } else {
+                    logDisplay.style.display = 'none';
+                }
+            } else {
+                console.error(section_id + 'log display area not found!');
+            }
+        }
+
+        // load logs
+        function loadLogs(logDomain, logDisplay) {
+            logDisplay.value = _('Loading logs...');  // display placeholder when loading
+            self.callGetLogs(logDomain).then(function(logText) {
+                logDisplay.value = logText || _('No logs available');
+                logDisplay.scrollTop = logDisplay.scrollHeight; // Scroll to bottom
+            }).catch(function(e) {
+                console.error('Error loading global logs:', e);
+                logDisplay.value = _('Failed to load logs.') + ' ' + e.message;
+            });
+        }
+
+        // create log text area
+        function createLogDisplayArea(section_id) {
+            return function(){
+                let areaId = section_id + '_log_display_area';
+
+                let textarea = E('textarea', {
+                    id:    areaId,
+                    rows:  20,
+                    readonly: 'readonly',
+                    wrap:  'off',
+                    class: 'cbi-input-textarea',
+                    style: [
+                        'width: 100%',
+                        // 'font-family: monospace',
+                        // 'font-size: 15px',
+                        'box-sizing:border-box',
+                        'display: none' // Initially hidden
+                    ].join(';')
+                });
+    
+                return E('div', {
+                    style: [
+                        'display:flex',
+                        'justify-content:center',   // align horizontally
+                        'padding:8px 0'
+                    ].join(';')
+                }, [ textarea ]);
+            
+            }
+        }
+
         // Global Log Button (Modified for Inline Toggle)
         o = s.taboption('info', form.Button, '_show_global_log');
         o.title = _('Global Logs');
         o.inputstyle = 'apply';
         o.inputtitle = _('Read/Reread log file');
         o.onclick = L.bind(function(ev) {
-            //  console.log('Global log button clicked');
-             let logDisplay = document.getElementById('global_log_display_area');
-             if (logDisplay) {
-                //  console.log('Global log display found');
-                 if (logDisplay.style.display === 'none') {
-                     logDisplay.style.display = 'block';
-                     logDisplay.value = _('Loading logs...');
-                     self.callGetLogs('global').then(function(logText) {
-                        //  console.log('Global logs received');
-                         logDisplay.value = logText || _('No logs available');
-                         logDisplay.scrollTop = logDisplay.scrollHeight; // Scroll to bottom
-                     }).catch(function(e){
-                          console.error('Error loading global logs:', e);
-                          logDisplay.value = _('Failed to load logs.') + ' ' + e.message;
-                     });
-                 } else {
-                     logDisplay.style.display = 'none';
-                 }
-             } else {
-                  console.error('Global log display area not found!');
-             }
+            toggleLogDisplay('global');
         }, self);
 
         // Global Log Display Area (DummyValue + Render)
         o = s.taboption('info', form.DummyValue, '_global_log_display');
-        o.render = function() {
-            const id = 'global_log_display_area';
-        
-            const textarea = E('textarea', {
-                id:    id,
-                rows:  20,
-                readonly: 'readonly',
-                wrap:  'off',
-                class: 'cbi-input-textarea',
-                style: [
-                    'width: 100%',
-                    // 'font-family: monospace',
-                    // 'font-size: 15px',
-                    'box-sizing:border-box',
-                    'display: none' // Initially hidden
-                ].join(';')
-            });
-
-            return E('div', {
-                style: [
-                    'display:flex',
-                    'justify-content:center',   // align horizontally
-                    'padding:8px 0'
-                ].join(';')
-            }, [ textarea ]);
-        };
+        o.render = createLogDisplayArea('global');
 
         // Global Settings Tab
         o = s.taboption('global_settings', form.Value, 'log_rdays', _('Log retention days (Global)'));
         o.description = _('Specify the number of days to retain global log files.');
         o.datatype = 'uinteger';
         o.placeholder = '7';
+
+        o = s.taboption('global_settings', form.Button, '_clean_log');
+        o.title = _('Clean Logs');
+        o.inputtitle = _('Delete');
+        o.inputstyle = 'reset';
+        o.onclick = L.bind(function(ev) {
+            this.callCleanLogs('global').then(() => {
+                // After the clean logs operation is successful, show success message
+                ui.addNotification(null, E('p', _('Global logs have been successfully cleared.')));
+            })
+            .catch(err => {
+                // In case of an error, show error message
+                ui.addNotification(null, E('p', _('Error clearing global logs: ').format(sid) + err.message));
+            })
+        }, self);
 
         // --- Sessions Grid Section --- 
         s = m.section(form.GridSection, 'session', _('Authentication Sessions'));
@@ -339,8 +399,10 @@ return view.extend({
             inputSid.focus();
         };
 
-         // Edit Modal Title
-         s.modaltitle = function(section_id) {
+        // TODO: handle clean session files after removing it
+
+        // Edit Modal Title
+        s.modaltitle = function(section_id) {
             return _('Session Configuration') + ' >> ' + section_id;
         };
 
@@ -468,58 +530,27 @@ return view.extend({
             o.inputtitle = _('Read/Reread log file');
             o.inputstyle = 'apply';
             o.onclick = L.bind(function(sid, ev) {
-                // console.log('Session log button clicked for:', sid);
-                let logDisplay = document.getElementById('log_display_area_' + sid);
-                if (logDisplay) {
-                    //  console.log('Session log display found');
-                    if (logDisplay.style.display === 'none') { // Toggle logic
-                        logDisplay.style.display = 'block'; // Make visible
-                        logDisplay.value = _('Loading logs...');
-                        // Ensure 'self' refers to the view instance
-                        return self.callGetLogs(sid).then(function(logText) {
-                            //  console.log('Session logs received for:', sid);
-                            logDisplay.value = logText || _('No logs available');
-                            logDisplay.scrollTop = logDisplay.scrollHeight; // Scroll to bottom
-                        }).catch(function(e){
-                             console.error('Error loading session logs for:', sid, e);
-                             logDisplay.value = _('Failed to load logs.') + ' ' + e.message;
-                        });
-                    } else {
-                        logDisplay.style.display = 'none'; // Hide
-                    }
-                } else {
-                    console.error('Session log display area not found for:', sid);
-                }
+                toggleLogDisplay(sid)
             }, self, section_id);
 
             o = modalSection.taboption('logging', form.DummyValue, '_log_display'); // Placeholder for the textarea
             o.modalonly = true;
-            o.render = function(option_index, section_id, container) {
-                const id = 'log_display_area_' + section_id;
+            o.render = createLogDisplayArea(section_id);
 
-                const textarea = E('textarea', {
-                    id:    id,
-                    rows:  20,
-                    readonly: 'readonly',
-                    wrap:  'off',
-                    class: 'cbi-input-textarea',
-                    style: [
-                        'width: 100%',
-                        // 'font-family: monospace',
-                        // 'font-size: 15px',
-                        'box-sizing:border-box',
-                        'display: none' // Initially hidden
-                    ].join(';')
-                });
-
-                return E('div', {
-                    style: [
-                        'display:flex',
-                        'justify-content:center',   // align horizontally
-                        'padding:8px 0'
-                    ].join(';')
-                }, [ textarea ]);
-            };
+            o = modalSection.taboption('logging', form.Button, '_clean_log');
+            o.title = _('Clean Logs');
+            o.inputtitle = _('Delete');
+            o.inputstyle = 'reset';
+            o.onclick = L.bind(function(sid, ev) {
+                this.callCleanLogs(sid).then(() => {
+                    // After the clean logs operation is successful, show success message
+                    ui.addNotification(null, E('p', _('Logs of session %s have been successfully cleared.').format(sid)));
+                })
+                .catch(err => {
+                    // In case of an error, show error message
+                    ui.addNotification(null, E('p', _('Error clearing logs of session %s: ').format(sid) + err.message));
+                })
+            }, self, section_id);
         };
 
         // Row Actions (Modified for combined Start/Stop)

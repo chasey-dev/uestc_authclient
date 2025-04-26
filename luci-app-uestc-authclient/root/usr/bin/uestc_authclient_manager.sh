@@ -281,6 +281,12 @@ stop_all_sessions() {
 #######################################
 # Main command handler
 #######################################
+usage() {
+    echo "Usage: $0 {start|stop|restart|status|log} [session_id]"
+    echo "$0 {clean} [log|all] [session_id]"
+    exit 1
+}
+
 case "$1" in
     start)
         if [ -n "$2" ]; then
@@ -336,10 +342,29 @@ case "$1" in
     log)
         get_logs_by_domain "$2"
         ;;
-    *)
-        echo "Usage: $0 {start|stop|restart|status|log} [session_id]"
-        exit 1
+
+    clean)
+        case "$2" in
+            log)
+                delete_logs_by_domain "$3"
+                ;;
+            all)
+                if [ -n "$3" ]; then
+                    # calling clean all may affect network connection display in UI
+                    rm -rf "$STATE_DIR/$3"
+                else
+                    rm -rf "$STATE_DIR/global"
+                fi
+                ;;
+            *)
+                usage
+                ;;
+        esac
         ;;
+    *)
+        usage
+        ;;
+        
 esac
 
 exit 0 
