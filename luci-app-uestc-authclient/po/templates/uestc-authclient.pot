@@ -15,7 +15,7 @@ msgstr ""
 # Title
 # --------------------------------------------------------------
 msgid "UESTC Authentication"
-msgstr "UESTC 认证"
+msgstr ""
 
 msgid "UESTC Authentication Client"
 msgstr ""
@@ -181,10 +181,19 @@ msgstr ""
 msgid "Select the authentication mode for the Srun client."
 msgstr ""
 
+msgid "Qingshuihe Campus"
+msgstr ""
+
+msgid "Qingshuihe Campus Dormitory"
+msgstr ""
+
+msgid "CERNET"
+msgstr ""
+
 msgid "China Telecom"
 msgstr ""
 
-msgid "Campus Network"
+msgid "China Mobile"
 msgstr ""
 
 msgid "Username cannot be empty."

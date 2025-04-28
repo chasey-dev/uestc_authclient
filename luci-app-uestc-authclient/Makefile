@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-uestc-authclient
-PKG_VERSION:=3.0
+PKG_VERSION:=3.1
 PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI Support for UESTC Authentication Client

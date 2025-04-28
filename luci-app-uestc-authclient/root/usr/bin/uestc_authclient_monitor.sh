@@ -94,7 +94,7 @@ init_config() {
     if [ "$AUTH_TYPE" = "ct" ]; then
         AUTH_PARAMS="-t ct   -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -w $MAX_WAIT"
     elif [ "$AUTH_TYPE" = "srun" ]; then
-        AUTH_MODE=$(uci_get uestc_authclient "$SESSION_ID" auth_mode dx)
+        AUTH_MODE=$(uci_get uestc_authclient "$SESSION_ID" auth_mode qsh-edu)
         AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD \
                      -m $AUTH_MODE -w $MAX_WAIT"
     else

@@ -434,9 +434,11 @@ return view.extend({
 
             o = modalSection.taboption('auth', form.ListValue, 'auth_mode', _('Srun authentication mode'));
             o.description = _('Select the authentication mode for the Srun client.');
-            o.value('dx', _('China Telecom'));
-            o.value('edu', _('Campus Network'));
-            o.default = 'dx';
+            o.value('qsh-edu', "%s - %s".format(_('Qingshuihe Campus'),_('CERNET')));
+            o.value('qsh-dx', "%s - %s".format(_('Qingshuihe Campus'),_('China Telecom')));
+            o.value('qshd-dx', "%s - %s".format(_('Qingshuihe Campus Dormitory'),_('China Telecom')));
+            o.value('qshd-cmcc', "%s - %s".format(_('Qingshuihe Campus Dormitory'),_('China Mobile')));
+            o.default = 'qsh-edu';
             o.depends('auth_type', 'srun');
 
             o = modalSection.taboption('auth', form.Value, 'auth_username', _('Username'));
@@ -455,7 +457,13 @@ return view.extend({
             o = modalSection.taboption('auth', form.Value, 'auth_host', _('Authentication Host'));
             o.description = _('Authentication server address, modify according to your area.')
             o.datatype = 'ip4addr';
-            o.placeholder = '10.253.0.237';
+            // define default server IPs to select
+            let defaultQshCTServerIP = '172.25.249.64', 
+                defaultQshSrunServerIP = '10.253.0.237', 
+                defaultQshSrunDormServerIP = '10.253.0.235';
+            o.value(defaultQshCTServerIP,"%s - %s (%s)".format(_('China Telecom'),_('Qingshuihe Campus Dormitory'),defaultQshCTServerIP));
+            o.value(defaultQshSrunServerIP, "Srun - %s (%s)".format(_('Qingshuihe Campus'),defaultQshSrunServerIP));
+            o.value(defaultQshSrunDormServerIP,"Srun - %s (%s)".format(_('Qingshuihe Campus Dormitory'),defaultQshSrunDormServerIP))
             o.rmempty = false;
             
             // Network Tab Options

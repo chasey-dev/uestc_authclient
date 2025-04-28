@@ -16,7 +16,7 @@ config session 'srun'
     option auth_type 'srun'
     option auth_username ''
     option auth_password ''
-    option auth_mode 'dx' # this is for srun clients only
+    option auth_mode 'qsh-edu' # this is for srun clients only
     option auth_host '10.253.0.237'
 
     option listen_interface 'wan'

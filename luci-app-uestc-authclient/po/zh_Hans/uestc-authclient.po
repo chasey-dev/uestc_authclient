@@ -173,16 +173,25 @@ msgid "CT authentication method (qsh-telecom-autologin)"
 msgstr "电信认证方式 (qsh-telecom-autologin)"
 
 msgid "Srun authentication mode"
-msgstr "Srun 认证方式"
+msgstr "Srun 认证模式"
 
 msgid "Select the authentication mode for the Srun client."
-msgstr "选择 Srun 客户端的认证方式。"
+msgstr "选择 Srun 客户端的认证模式。"
+
+msgid "Qingshuihe Campus"
+msgstr "清水河"
+
+msgid "Qingshuihe Campus Dormitory"
+msgstr "清水河宿舍"
+
+msgid "CERNET"
+msgstr "教育网"
 
 msgid "China Telecom"
 msgstr "电信"
 
-msgid "Campus Network"
-msgstr "校园网"
+msgid "China Mobile"
+msgstr "移动"
 
 msgid "Username cannot be empty."
 msgstr "用户名不能为空。"
