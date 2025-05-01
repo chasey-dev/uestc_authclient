@@ -11,13 +11,13 @@ config system 'global'
 ###############################################################################
 
 config session 'srun'
-    option enabled '1'
+    option enabled '0'
     option lm_enabled '1'
     option auth_type 'srun'
     option auth_username ''
     option auth_password ''
     option auth_mode 'qsh-edu' # this is for srun clients only
-    option auth_host '10.253.0.237'
+    option auth_host ''
 
     option listen_interface 'wan'
     option listen_check_interval '30'
@@ -32,12 +32,12 @@ config session 'srun'
     option log_rdays '7'
 
 config session 'ct'
-    option enabled '1'
+    option enabled '0'
     option lm_enabled '1'
     option auth_type 'ct'
     option auth_username ''
     option auth_password ''
-    option auth_host '10.253.0.237'
+    option auth_host ''
 
     option listen_interface 'wan'
     option listen_check_interval '30'

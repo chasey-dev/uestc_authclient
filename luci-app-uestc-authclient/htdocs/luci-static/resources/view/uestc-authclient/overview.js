@@ -570,14 +570,16 @@ return view.extend({
             // Create combined Start/Stop button
             let startStopBtn = E('button', {
                 'class': 'cbi-button cbi-button-action start-stop',
-                'title': _('Start/Stop this session')
+                'title': _('Start/Stop this session'),
+                'disabled': true
             }, _('Loading...')); // Text will be set by poll_status
 
             // Create Restart button
             let restartBtn = E('button', {
                 'class': 'cbi-button cbi-button-action restart',
                 'click': ui.createHandlerFn(self, 'handleSessionAction', section_id, 'restart'),
-                'title': _('Restart this session')
+                'title': _('Restart this session'),
+                'disabled': true
             }, _('Restart'));
 
             // Create space nodes for separation
