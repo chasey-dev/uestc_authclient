@@ -413,24 +413,31 @@ check_limited_monitoring() {
         return 0
     fi
 
-    # Get current timestamp and calculate difference
+    # Get current timestamp
     CURRENT_TS=$(date +%s)
-    TIME_DIFF=$((CURRENT_TS - LAST_LOGIN_TS))
-    # Take absolute value of time difference
+
+    # Get the Hour:Minute:Second of the last login
+    # This will be used to determine the target monitoring window for *today*
+    LAST_LOGIN_HOD=$(date -d "@$LAST_LOGIN_TS" "+%H:%M:%S")
+    # Calculate today's timestamp at the Hour:Minute:Second of the last login
+    TARGET_TS_TODAY=$(date -d "$LAST_LOGIN_HOD" +%s)
+    # Calculate the difference between the current time and today's target time
+    TIME_DIFF=$((CURRENT_TS - TARGET_TS_TODAY))
+    # Take the absolute value of the time difference
     TIME_DIFF_ABS=${TIME_DIFF#-}
-    
-    # Check if within 10 minutes (600 seconds) window
+    # Check if current time is within the ±10 minutes (600 seconds) window 
+    # around the daily login time
     if [ "$TIME_DIFF_ABS" -le 600 ]; then
-        # Within ±10 minutes
+        # Within ±10 minutes of the daily login time
         if [ "$limited_monitoring_notice_flag" -ne 0 ]; then
-            log_message "$MSG_MONITOR_WINDOW_ACTIVE"
+            log_message "$MSG_MONITOR_WINDOW_ACTIVE" # Message indicates monitoring is active
             limited_monitoring_notice_flag=0
         fi
-        return 0
+        return 0 # Continue with network check
     else
-        # Outside monitoring window
+        # Outside the daily ±10 minutes monitoring window
         if [ "$limited_monitoring_notice_flag" -ne 1 ]; then
-            log_message "$MSG_MONITOR_WINDOW_INACTIVE"
+            log_message "$MSG_MONITOR_WINDOW_INACTIVE" # Message indicates monitoring is inactive
             limited_monitoring_notice_flag=1
         fi
         return 1  # Signal to skip network check
