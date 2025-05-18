@@ -1,19 +1,19 @@
 diff --git a/portal/portal.go b/portal/portal.go
-index 906f058..4598760 100644
+index ddbfe4a..d6cf115 100644
 --- a/portal/portal.go
 +++ b/portal/portal.go
-@@ -47,7 +47,7 @@ func NewPortal(name, password string, ipv4 net.IP) (*Portal, error) {
- func (p *Portal) GetChallenge(u string) (string, error) {
- 	u = fmt.Sprintf(u, "gondportal", url.QueryEscape(p.nam), p.ip, time.Now().UnixMilli())
+@@ -118,7 +118,7 @@ func (p *Portal) GetChallenge(sIP string) (string, error) {
+ 		return "", err
+ 	}
  	logrus.Debugln("GET", u)
 -	data, err := requestDataWith(u, "GET", PortalHeaderUA)
 +	data, err := requestDataWith(p.ip, u, "GET", PortalHeaderUA)
  	if err != nil {
  		return "", err
  	}
-@@ -79,7 +79,7 @@ func (p *Portal) Login(u, domain, challenge string) error {
- 	hmd5 := p.PasswordHMd5(challenge)
- 	u = fmt.Sprintf(u, "gondportal", url.QueryEscape(p.nam), hmd5, p.ip, p.CheckSum(domain, challenge, hmd5, info), url.QueryEscape(info), time.Now().UnixMilli())
+@@ -175,7 +175,7 @@ func (p *Portal) Login(sIP, challenge string) error {
+ 		return err
+ 	}
  	logrus.Debugln("GET", u)
 -	data, err := requestDataWith(u, "GET", PortalHeaderUA)
 +	data, err := requestDataWith(p.ip, u, "GET", PortalHeaderUA)
@@ -21,17 +21,17 @@ index 906f058..4598760 100644
  		return err
  	}
 diff --git a/portal/web.go b/portal/web.go
-index 5aa185a..50d9229 100644
+index 5aa185a..1224974 100644
 --- a/portal/web.go
 +++ b/portal/web.go
-@@ -4,13 +4,82 @@ import (
+@@ -4,13 +4,83 @@ import (
  	"errors"
  	"fmt"
  	"io"
-+	"time"
 +	"net"
  	"net/http"
 +	"syscall"
++	"time"
 +
 +	"github.com/sirupsen/logrus"
  )
@@ -39,7 +39,7 @@ index 5aa185a..50d9229 100644
 -var client = &http.Client{}
 +// findInterfaceByIP 根据给定的 IP 查询所属的网络接口
 +func findInterfaceByIP(ip net.IP) (*net.Interface, error) {
-+	logrus.Debugln("request ip: ",ip)
++	logrus.Debugln("request ip: ", ip)
 +	ifaces, err := net.Interfaces()
 +	if err != nil {
 +		s := fmt.Sprintf("get interface list failed: %v", err)
@@ -62,7 +62,7 @@ index 5aa185a..50d9229 100644
 +				addrIP = v.IP
 +			}
 +			if ipNet != nil && addrIP.Equal(ip) {
-+				logrus.Debugln("ip bound to iface",iface)
++				logrus.Debugln("ip bound to iface", iface)
 +				return &iface, nil
 +			}
 +		}
@@ -74,8 +74,9 @@ index 5aa185a..50d9229 100644
 +// dialerWithInterface 返回一个自定义的 net.Dialer，该 dialer 在建立连接时将 socket 绑定到指定的网络接口（仅限 Linux）
 +func dialerWithInterface(iface string) *net.Dialer {
 +	return &net.Dialer{
-+		Timeout: 30 * time.Second,
-+		Control: func(network, address string, c syscall.RawConn) error {
++		Timeout:   30 * time.Second,
++		KeepAlive: 30 * time.Second,
++		Control: func(_, _ string, c syscall.RawConn) error {
 +			var controlErr error
 +			// 在 socket 建立后，通过 Control 回调设置 SO_BINDTODEVICE 选项绑定到指定接口
 +			err := c.Control(func(fd uintptr) {
@@ -92,8 +93,8 @@ index 5aa185a..50d9229 100644
  // requestDataWith 使用自定义请求头获取数据
 -func requestDataWith(url, method, ua string) (data []byte, err error) {
 +func requestDataWith(ip net.IP, url, method, ua string) (data []byte, err error) {
-+	iface, err :=findInterfaceByIP(ip)
-+	if(err != nil){
++	iface, err := findInterfaceByIP(ip)
++	if err != nil {
 +		return nil, err
 +	}
 +
@@ -101,7 +102,7 @@ index 5aa185a..50d9229 100644
 +
 +	client := &http.Client{
 +		Transport: &http.Transport{
-+			DialContext: dialer.DialContext,
++			DialContext:         dialer.DialContext,
 +			TLSHandshakeTimeout: 10 * time.Second,
 +		},
 +	}
