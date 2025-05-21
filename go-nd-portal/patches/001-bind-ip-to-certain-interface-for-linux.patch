@@ -1,30 +1,30 @@
 diff --git a/portal/portal.go b/portal/portal.go
-index ddbfe4a..d6cf115 100644
+index 20a201e..112ac58 100644
 --- a/portal/portal.go
 +++ b/portal/portal.go
-@@ -118,7 +118,7 @@ func (p *Portal) GetChallenge(sIP string) (string, error) {
+@@ -141,7 +141,7 @@ func (p *Portal) GetChallenge() (string, error) {
  		return "", err
  	}
  	logrus.Debugln("GET", u)
 -	data, err := requestDataWith(u, "GET", PortalHeaderUA)
-+	data, err := requestDataWith(p.ip, u, "GET", PortalHeaderUA)
++	data, err := requestDataWith(p.cip, u, "GET", PortalHeaderUA)
  	if err != nil {
  		return "", err
  	}
-@@ -175,7 +175,7 @@ func (p *Portal) Login(sIP, challenge string) error {
+@@ -197,7 +197,7 @@ func (p *Portal) Login(challenge string) error {
  		return err
  	}
  	logrus.Debugln("GET", u)
 -	data, err := requestDataWith(u, "GET", PortalHeaderUA)
-+	data, err := requestDataWith(p.ip, u, "GET", PortalHeaderUA)
++	data, err := requestDataWith(p.cip, u, "GET", PortalHeaderUA)
  	if err != nil {
  		return err
  	}
 diff --git a/portal/web.go b/portal/web.go
-index 5aa185a..1224974 100644
+index 5aa185a..a37a913 100644
 --- a/portal/web.go
 +++ b/portal/web.go
-@@ -4,13 +4,83 @@ import (
+@@ -4,18 +4,93 @@ import (
  	"errors"
  	"fmt"
  	"io"
@@ -37,7 +37,7 @@ index 5aa185a..1224974 100644
  )
  
 -var client = &http.Client{}
-+// findInterfaceByIP 根据给定的 IP 查询所属的网络接口
++// findInterfaceByIP find interface by given IP address
 +func findInterfaceByIP(ip net.IP) (*net.Interface, error) {
 +	logrus.Debugln("request ip: ", ip)
 +	ifaces, err := net.Interfaces()
@@ -71,14 +71,17 @@ index 5aa185a..1224974 100644
 +	return nil, errors.New(s)
 +}
 +
-+// dialerWithInterface 返回一个自定义的 net.Dialer，该 dialer 在建立连接时将 socket 绑定到指定的网络接口（仅限 Linux）
++// dialerWithInterface returns a net.Dialer，
++// which binds socket to specified interface when establishing connection
++// linux only
 +func dialerWithInterface(iface string) *net.Dialer {
 +	return &net.Dialer{
 +		Timeout:   30 * time.Second,
 +		KeepAlive: 30 * time.Second,
 +		Control: func(_, _ string, c syscall.RawConn) error {
 +			var controlErr error
-+			// 在 socket 建立后，通过 Control 回调设置 SO_BINDTODEVICE 选项绑定到指定接口
++			// set SO_BINDTODEVICE for Control to bind to specified interface,
++			// after socket is initialized
 +			err := c.Control(func(fd uintptr) {
 +				controlErr = syscall.SetsockoptString(int(fd), syscall.SOL_SOCKET, syscall.SO_BINDTODEVICE, iface)
 +			})
@@ -89,24 +92,34 @@ index 5aa185a..1224974 100644
 +		},
 +	}
 +}
- 
- // requestDataWith 使用自定义请求头获取数据
--func requestDataWith(url, method, ua string) (data []byte, err error) {
++
++// requestDataWith request data with customized http header
 +func requestDataWith(ip net.IP, url, method, ua string) (data []byte, err error) {
++	// get the actual iface first
 +	iface, err := findInterfaceByIP(ip)
 +	if err != nil {
 +		return nil, err
 +	}
-+
++	// get the dialer with bound iface
 +	dialer := dialerWithInterface(iface.Name)
 +
++	// specify DialContext with given dialer
 +	client := &http.Client{
 +		Transport: &http.Transport{
 +			DialContext:         dialer.DialContext,
 +			TLSHandshakeTimeout: 10 * time.Second,
 +		},
 +	}
-+
- 	// 提交请求
+ 
+-// requestDataWith 使用自定义请求头获取数据
+-func requestDataWith(url, method, ua string) (data []byte, err error) {
+-	// 提交请求
++	// send req
  	var request *http.Request
  	request, err = http.NewRequest(method, url, nil)
+ 	if err == nil {
+-		// 增加header选项
++		// add User-Agent to http header
+ 		if ua != "" {
+ 			request.Header.Add("User-Agent", ua)
+ 		}
