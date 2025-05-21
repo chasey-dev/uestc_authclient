@@ -76,7 +76,7 @@ init_config() {
         USERNAME=$(uci get uestc_authclient.auth.srun_username 2>/dev/null)
         PASSWORD=$(uci get uestc_authclient.auth.srun_password 2>/dev/null)
         AUTH_MODE=$(uci get uestc_authclient.auth.srun_auth_mode 2>/dev/null)
-        [ -z "$AUTH_MODE" ] && AUTH_MODE="dx"
+        [ -z "$AUTH_MODE" ] && AUTH_MODE="qsh-edu"
         HOST=$(uci get uestc_authclient.auth.srun_host 2>/dev/null)
         [ -z "$HOST" ] && HOST="10.253.0.237"
         AUTH_PARAMS="-t srun -i $INTERFACE -s $HOST -u $USERNAME -p $PASSWORD -m $AUTH_MODE -w $MAX_WAIT"

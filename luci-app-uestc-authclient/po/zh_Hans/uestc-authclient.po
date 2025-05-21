@@ -9,7 +9,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "UESTC Authentication"
-msgstr "UESTC 清水河认证"
+msgstr "UESTC 认证"
 
 msgid "Overview"
 msgstr "概览"
@@ -20,14 +20,11 @@ msgstr "配置"
 msgid "No logs available"
 msgstr "暂无日志"
 
-msgid "UESTC Authentication Client"
-msgstr "UESTC 清水河认证客户端"
-
 msgid ""
 "This page is used to configure the UESTC authentication client. Please fill "
 "in your username and password, and adjust other settings as needed."
 msgstr ""
-"此页面用于配置 UESTC 清水河认证客户端。请填写您的用户名和密码，并根据需要调整其他设置。"
+"此页面用于配置 UESTC 认证客户端。请填写您的用户名和密码，并根据需要调整其他设置。"
 
 msgid "Settings"
 msgstr "设置"
@@ -137,14 +134,23 @@ msgstr "您的 Srun 认证密码。"
 msgid "Srun authentication mode"
 msgstr "Srun 认证方式"
 
+msgid "Qingshuihe Campus"
+msgstr "清水河"
+
+msgid "Qingshuihe Campus Dormitory"
+msgstr "清水河宿舍"
+
+msgid "CERNET"
+msgstr "教育网"
+
 msgid "China Telecom"
 msgstr "电信"
 
-msgid "Campus Network"
-msgstr "校园网"
+msgid "China Mobile"
+msgstr "移动"
 
 msgid "Select the authentication mode for the Srun client."
-msgstr "选择 Srun 客户端的认证方式。"
+msgstr "选择 Srun 客户端的认证模式。"
 
 msgid "Srun authentication host"
 msgstr "Srun 认证服务器地址"
@@ -210,7 +216,7 @@ msgid "None"
 msgstr "无"
 
 msgid "This page displays the current status of the UESTC authentication client and provides control functions."
-msgstr "此页面显示 UESTC 清水河认证客户端的当前状态，并提供控制功能。"
+msgstr "此页面显示 UESTC 认证客户端的当前状态，并提供控制功能。"
 
 msgid "Status"
 msgstr "状态"

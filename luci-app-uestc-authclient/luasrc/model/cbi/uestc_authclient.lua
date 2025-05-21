@@ -3,7 +3,7 @@ local uci   = require "luci.model.uci".cursor()
 local net  = require "luci.model.network".init()
 
 -- Create the Map referencing /etc/config/uestc_authclient
-local m = Map("uestc_authclient", translate("UESTC Authentication Client"),
+local m = Map("uestc_authclient", translate("Configuration"),
     translate("This page is used to configure the UESTC authentication client. Please fill in your username and password, and adjust other settings as needed.")
 )
 
@@ -120,17 +120,21 @@ function oSrunPass.validate(self, value, section)
 end
 
 local oSrunMode = sAuth:option(ListValue, "srun_auth_mode", translate("Srun authentication mode"))
-oSrunMode:value("dx", translate("China Telecom"))
-oSrunMode:value("edu", translate("Campus Network"))
-oSrunMode.default = "dx"
+oSrunMode:value("qsh-edu", string.format(string.format("%s - %s", translate("Qingshuihe Campus"), translate("CERNET"))))
+oSrunMode:value("qsh-dx", string.format(string.format("%s - %s", translate("Qingshuihe Campus"), translate("China Telecom"))))
+oSrunMode:value("qshd-dx", string.format(string.format("%s - %s", translate("Qingshuihe Campus Dormitory"), translate("China Telecom"))))
+oSrunMode:value("qshd-cmcc", string.format(string.format("%s - %s", translate("Qingshuihe Campus Dormitory"), translate("China Mobile"))))
+oSrunMode.default = "qsh-edu"
 oSrunMode.description = translate("Select the authentication mode for the Srun client.")
 oSrunMode:depends("auth_type", "srun")
 
 local oSrunHost = sAuth:option(Value, "srun_host", translate("Srun authentication host"))
 oSrunHost.datatype = "ipaddr"
-oSrunHost.default = "10.253.0.237"
+local defaultHostQsh = "10.253.0.237"
+local defaultHostQshDorm = "10.253.0.235"
+oSrunHost:value(defaultHostQsh, string.format("%s - %s", translate("Qingshuihe Campus"), defaultHostQsh))
+oSrunHost:value(defaultHostQshDorm, string.format("%s - %s", translate("Qingshuihe Campus Dormitory"), defaultHostQshDorm))
 oSrunHost.description = translate("Srun authentication server address, modify according to your area.")
-oSrunHost.placeholder = "10.253.0.237"
 oSrunHost:depends("auth_type", "srun")
 
 

@@ -20,8 +20,8 @@ config auth 'auth'
     # Srun client settings
     option srun_username ''
     option srun_password ''
-    option srun_auth_mode 'dx'    # e.g. 'dx', 'edu'
-    option srun_host '10.253.0.237'
+    option srun_auth_mode 'qsh-edu'
+    option srun_host ''
 
 ###############################################################################
 # Network Settings

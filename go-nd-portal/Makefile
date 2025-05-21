@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=go-nd-portal
-PKG_VERSION:=0.1.3
+PKG_VERSION:=0.2.1
 PKG_RELEASE:=1
 PKG_BUILD_DEPENDS:=golang
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/fumiama/go-nd-portal.git
-PKG_SOURCE_DATE:=2022-12-06
+PKG_SOURCE_DATE:=2025-05-21
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 

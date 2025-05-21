@@ -23,7 +23,7 @@ usage() {
     printf "  -s: Authentication server / host\n"
     printf "  -u: Username\n"
     printf "  -p: Password\n"
-    printf "  -m: Authentication mode (srun only, default: dx)\n"
+    printf "  -m: Authentication mode [qsh-edu | qsh-dx | qshd-dx | qshd-cmcc] (srun only, default: qsh-edu)\n"
     printf "  -w: Timeout (seconds) waiting for IP on interface (default: 30)\n"
     exit 1
 }
@@ -36,7 +36,7 @@ CLIENT_TYPE=""
 USERNAME=""
 PASSWORD=""
 HOST=""
-AUTH_MODE="dx"
+AUTH_MODE="qsh-edu"
 WAIT_IP_TIMEOUT=30
 
 ###############################################################################
@@ -130,10 +130,10 @@ if [ "$CLIENT_TYPE" = "ct" ]; then
     [ $? -eq 0 ] && RETURN_CODE=0 || RETURN_CODE=3
 
 else  # srun
-    [ "$AUTH_MODE" = "dx" ] && MODE_FLAG="-x" || MODE_FLAG=""
+    # let AUTH_BIN handle the host & auth_mode validation
     LOGIN_OUTPUT=$("$AUTH_BIN" \
         -ip "$INTERFACE_IP" -n "$USERNAME" -p "$PASSWORD" \
-        $MODE_FLAG -d 2>&1)
+        -s "$HOST" -t "$AUTH_MODE" -d 2>&1)
 
     echo "$LOGIN_OUTPUT" | grep -qi "success"
     [ $? -eq 0 ] && RETURN_CODE=0 || RETURN_CODE=3
