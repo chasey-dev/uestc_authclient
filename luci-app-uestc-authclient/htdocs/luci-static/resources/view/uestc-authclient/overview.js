@@ -315,7 +315,7 @@ return view.extend({
             // actual validate session ID
             function validateSid(sid, existing) {
                 if (!sid)             return _('Session name cannot be empty.');
-                if (['global','basic','_new_'].includes(sid))
+                if (['global','basic','_new_','lock'].includes(sid))
                     return _('This name is reserved, please choose another.');
         
                 // allowed chars: A–Z a–z 0–9 - _ , length 1-32
