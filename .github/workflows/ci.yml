@@ -5,6 +5,8 @@ name: CI Multi-SDK Build
 on:
   workflow_dispatch: # Allows manual triggering from the GitHub UI
   push:
+    branches:
+      - testing/* # Trigger on testing branches
     tags:
       - 'v*'   # Trigger on pushes of tags matching 'v*' (eg. v2.6)
 
