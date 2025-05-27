@@ -1,0 +1,436 @@
+# Workflow name displayed on GitHub Actions UI
+name: CI Multi-SDK Build
+
+# Triggers for the workflow
+on:
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+  push:
+    tags:
+      - 'v*'   # Trigger on pushes of tags matching 'v*' (eg. v2.6)
+
+# Environment variables available to all jobs and steps in the workflow
+env:
+  # This is the main application package name you want to ensure gets built.
+  # Dependencies of this app, if also present in the repository, will be handled.
+  MAIN_APP_TO_BUILD: "luci-app-uestc-authclient"
+  REPO_CHECKOUT_PATH: "source_code"        # Directory to checkout the repository into
+
+# Define jobs for the workflow
+jobs:
+  prepare_release_metadata:
+    # Name of the job displayed on GitHub Actions UI
+    name: Prepare Release Metadata
+    # Runner environment
+    runs-on: ubuntu-22.04
+    # Outputs from this job, used by build and release jobs
+    outputs:
+      build_type: ${{ steps.determine_build_context.outputs.build_type }}
+      version_identifier: ${{ steps.determine_build_context.outputs.version_identifier }}
+      actual_tag_for_release: ${{ steps.determine_build_context.outputs.actual_tag_for_release }}
+      is_prerelease_boolean: ${{ steps.determine_build_context.outputs.is_prerelease_boolean }}
+      artifact_name_base: ${{ steps.determine_build_context.outputs.artifact_name_base }}
+      branch_name_raw: ${{ steps.determine_build_context.outputs.branch_name_raw }}
+      branch_name_slug_for_cleanup: ${{ steps.determine_build_context.outputs.branch_name_slug_for_cleanup }}
+
+    steps:
+      - name: Checkout repository (for context determination)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all tags and branches
+
+      - name: Determine Build Context
+        # This step determines if the build is for a release tag or a branch/PR.
+        # It sets various output variables used for naming artifacts, tags, and controlling release type.
+        id: determine_build_context
+        shell: bash
+        run: |
+          # Use the GitHub repository name as the base for artifact naming
+          ARTIFACT_NAME_BASE_VAR="${{ github.event.repository.name }}"
+          echo "Using ARTIFACT_NAME_BASE: $ARTIFACT_NAME_BASE_VAR"
+
+          BUILD_TYPE="prerelease"
+          IS_PRERELEASE_BOOLEAN="true"
+          BRANCH_NAME_RAW_VAR=""
+          BRANCH_NAME_SLUG_VAR=""
+
+          if [[ "${{ github.ref_type }}" == "tag" && "${{ github.ref_name }}" == v* ]]; then
+            BUILD_TYPE="release"
+            VERSION_IDENTIFIER_VAR="${{ github.ref_name }}"
+            ACTUAL_TAG_FOR_RELEASE_VAR="${{ github.ref_name }}"
+            IS_PRERELEASE_BOOLEAN="false"
+            BRANCH_NAME_RAW_VAR="tag-${{ github.ref_name }}"
+            BRANCH_NAME_SLUG_VAR="release"
+            echo "Build Type: Release (from tag ${{ github.ref_name }})"
+          else
+            BUILD_TYPE="prerelease"
+            IS_PRERELEASE_BOOLEAN="true"
+            
+            if [ -n "${{ github.head_ref }}" ]; then # Pull Request
+              BRANCH_NAME_RAW_VAR="${{ github.head_ref }}"
+            else # Push to branch
+              BRANCH_NAME_RAW_VAR=$(echo "${{ github.ref }}" | sed 's!refs/heads/!!')
+            fi
+            
+            BRANCH_NAME_SLUG_VAR=$(echo "$BRANCH_NAME_RAW_VAR" | tr '/' '-' | sed 's/[^a-zA-Z0-9._-]/-/g' | sed 's/^-*//;s/-*$//')
+            if [ -z "$BRANCH_NAME_SLUG_VAR" ]; then BRANCH_NAME_SLUG_VAR="pr"; fi
+
+            DATE_SUFFIX=$(date +'%Y%m%d-%H%M%S')
+            VERSION_IDENTIFIER_VAR="${BRANCH_NAME_SLUG_VAR}-${DATE_SUFFIX}"
+            ACTUAL_TAG_FOR_RELEASE_VAR="prerelease-${VERSION_IDENTIFIER_VAR}-${{ github.run_id }}"
+            echo "Build Type: Pre-release (source: $BRANCH_NAME_RAW_VAR, version id: $VERSION_IDENTIFIER_VAR)"
+          fi
+
+          echo "artifact_name_base=${ARTIFACT_NAME_BASE_VAR}" >> $GITHUB_OUTPUT
+          echo "build_type=${BUILD_TYPE}" >> $GITHUB_OUTPUT
+          echo "version_identifier=${VERSION_IDENTIFIER_VAR}" >> $GITHUB_OUTPUT
+          echo "actual_tag_for_release=${ACTUAL_TAG_FOR_RELEASE_VAR}" >> $GITHUB_OUTPUT
+          echo "is_prerelease_boolean=${IS_PRERELEASE_BOOLEAN}" >> $GITHUB_OUTPUT
+          echo "branch_name_raw=${BRANCH_NAME_RAW_VAR}" >> $GITHUB_OUTPUT
+          echo "branch_name_slug_for_cleanup=${BRANCH_NAME_SLUG_VAR}" >> $GITHUB_OUTPUT
+
+  build_ipks_for_target:
+    # Name of the job displayed on GitHub Actions UI, dynamically constructed for clarity
+    name: Build for OpenWrt ${{ matrix.openwrt_version }} (${{ matrix.openwrt_target_arch }}/${{ matrix.openwrt_target_subtarget }})
+    needs: prepare_release_metadata # Depends on the metadata job
+    runs-on: ubuntu-22.04
+    # Define the matrix for different SDK targets
+    strategy:
+      fail-fast: false # Continue other matrix jobs even if one fails
+      matrix:
+        # Define your SDK targets here
+        # openwrt_version: Target OpenWrt version (e.g., "23.05.3", "snapshot")
+        # openwrt_target_arch: Main target architecture
+        # openwrt_target_subtarget: Target sub-architecture
+        include:
+            # openwrt-24.10
+            # build for aarch64-cortex-a53
+          - openwrt_version: "24.10.1"
+            openwrt_target_arch: "qualcommax"
+            openwrt_target_subtarget: "ipq807x"
+            # build for x86-64
+          - openwrt_version: "24.10.1"
+            openwrt_target_arch: "x86"
+            openwrt_target_subtarget: "64"
+            # openwrt-21.02
+            # build for aarch64-cortex-a53
+          - openwrt_version: "21.02.7"
+            openwrt_target_arch: "mediatek"
+            openwrt_target_subtarget: "mt7622"
+            # build for x86-64
+          - openwrt_version: "21.02.7"
+            openwrt_target_arch: "x86"
+            openwrt_target_subtarget: "64"
+          
+
+    # Outputs from this job (per matrix leg) are primarily for internal artifact handling
+    # The publish_release job will download all artifacts without needing these explicit outputs.
+
+    steps:
+      - name: Set Composite Target ID Slug
+        # Creates a sanitized slug from matrix variables for use in directory and artifact names.
+        id: set_target_slug
+        run: |
+          RAW_ID="${{ matrix.openwrt_version }}-${{ matrix.openwrt_target_arch }}-${{ matrix.openwrt_target_subtarget }}"
+          # Sanitize: replace problematic characters with underscores, ensure it's friendly for filenames/artifact names
+          # 1. Replace '/' with '_'
+          # 2. Replace any character NOT in a-zA-Z0-9_.- with '_'
+          # 3. Collapse multiple consecutive underscores to a single one
+          # 4. Remove leading underscore
+          # 5. Remove trailing underscore
+          SLUG=$(echo "$RAW_ID" | \
+                 tr '/' '_' | \
+                 tr -cs 'a-zA-Z0-9_.-' '_' | \
+                 sed 's/__*/_/g' | \
+                 sed 's/^_//' | \
+                 sed 's/_$//')
+          echo "slug=${SLUG}" >> $GITHUB_OUTPUT
+          echo "Using target slug for internal naming: ${SLUG}"
+
+      - name: Checkout repository (containing all app sources)
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.REPO_CHECKOUT_PATH }}
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential ccache coreutils curl file gawk gcc g++ \
+            git libncurses5-dev libssl-dev make p7zip p7zip-full \
+            python3 python3-distutils python3-setuptools rsync \
+            subversion unzip util-linux wget xsltproc zlib1g-dev zstd
+
+      - name: Determine OpenWrt SDK Tarball Name and Download Info
+        id: sdk_info
+        shell: bash
+        run: |
+          # Use matrix variables for SDK specifics
+          OPENWRT_VERSION_CURRENT="${{ matrix.openwrt_version }}"
+          OPENWRT_TARGET_ARCH_CURRENT="${{ matrix.openwrt_target_arch }}"
+          OPENWRT_TARGET_SUBTARGET_CURRENT="${{ matrix.openwrt_target_subtarget }}"
+          TARGET_SLUG_FOR_LOGS="${{ steps.set_target_slug.outputs.slug }}" # For clearer log messages
+
+          if [ "${OPENWRT_VERSION_CURRENT}" = "snapshot" ]; then
+            SDK_DOWNLOAD_URL_BASE_FOR_SHA="https://downloads.openwrt.org/snapshots/targets/${OPENWRT_TARGET_ARCH_CURRENT}/${OPENWRT_TARGET_SUBTARGET_CURRENT}"
+            SDK_DOWNLOAD_URL_BASE_FOR_TARBALL=$SDK_DOWNLOAD_URL_BASE_FOR_SHA
+            SDK_FILENAME_PATTERN_BASE="openwrt-sdk-${OPENWRT_TARGET_ARCH_CURRENT}-${OPENWRT_TARGET_SUBTARGET_CURRENT}"
+          else
+            SDK_DOWNLOAD_URL_BASE_FOR_SHA="https://downloads.openwrt.org/releases/${OPENWRT_VERSION_CURRENT}/targets/${OPENWRT_TARGET_ARCH_CURRENT}/${OPENWRT_TARGET_SUBTARGET_CURRENT}"
+            SDK_DOWNLOAD_URL_BASE_FOR_TARBALL=$SDK_DOWNLOAD_URL_BASE_FOR_SHA
+            SDK_FILENAME_PATTERN_BASE="openwrt-sdk-${OPENWRT_VERSION_CURRENT}-${OPENWRT_TARGET_ARCH_CURRENT}-${OPENWRT_TARGET_SUBTARGET_CURRENT}"
+          fi
+
+          SHA_URL="${SDK_DOWNLOAD_URL_BASE_FOR_SHA}/sha256sums"
+          echo "SHA256SUMS URL for target ${TARGET_SLUG_FOR_LOGS}: ${SHA_URL}"
+          wget -q "${SHA_URL}" -O "$GITHUB_WORKSPACE/sha256sums_temp_file"
+          if [ $? -ne 0 ]; then echo "::error::Failed to download sha256sums from ${SHA_URL} for target ${TARGET_SLUG_FOR_LOGS}."; exit 1; fi
+
+          SDK_TARBALL_CANDIDATES=()
+          mapfile -t SDK_TARBALL_CANDIDATES < <(grep -Eo "${SDK_FILENAME_PATTERN_BASE}[^[:space:]]*_gcc-[^_]+_musl[^[:space:]]*\.Linux-x86_64\.tar\.(xz|gz|bz2|zst)" "$GITHUB_WORKSPACE/sha256sums_temp_file" | sort -r)
+          rm "$GITHUB_WORKSPACE/sha256sums_temp_file"
+
+          if [ ${#SDK_TARBALL_CANDIDATES[@]} -eq 0 ]; then echo "::error::Could not auto-detect SDK tarball name for target ${TARGET_SLUG_FOR_LOGS}."; exit 1; fi
+          SDK_TARBALL_NAME="${SDK_TARBALL_CANDIDATES[0]}"
+          echo "Auto-detected SDK Tarball Name for target ${TARGET_SLUG_FOR_LOGS}: ${SDK_TARBALL_NAME}"
+
+          SDK_DIR_EXTRACTED_NAME=$(echo "${SDK_TARBALL_NAME}" | sed 's/\.tar\.xz$//' | sed 's/\.tar\.gz$//' | sed 's/\.tar\.bz2$//' | sed 's/\.tar\.zst$//')
+          FULL_SDK_DOWNLOAD_URL="${SDK_DOWNLOAD_URL_BASE_FOR_TARBALL}/${SDK_TARBALL_NAME}"
+
+          echo "sdk_tarball_name=${SDK_TARBALL_NAME}" >> $GITHUB_OUTPUT
+          echo "sdk_dir_name=${SDK_DIR_EXTRACTED_NAME}" >> $GITHUB_OUTPUT
+          echo "sdk_download_url=${FULL_SDK_DOWNLOAD_URL}" >> $GITHUB_OUTPUT
+
+      - name: Download and Extract OpenWrt SDK for current target
+        run: |
+          SDK_URL="${{ steps.sdk_info.outputs.sdk_download_url }}"
+          SDK_TARBALL="${{ steps.sdk_info.outputs.sdk_tarball_name }}"
+          SDK_EXTRACTED_DIR_NAME="${{ steps.sdk_info.outputs.sdk_dir_name }}"
+          TARGET_SLUG="${{ steps.set_target_slug.outputs.slug }}"
+          
+          # Create a unique SDK build directory for this matrix leg using the slug
+          SDK_BUILD_DIR_MATRIX="openwrt_sdk_build_${TARGET_SLUG}"
+          mkdir -p "$GITHUB_WORKSPACE/${SDK_BUILD_DIR_MATRIX}"
+          cd "$GITHUB_WORKSPACE/${SDK_BUILD_DIR_MATRIX}"
+
+          echo "Downloading SDK for target ${TARGET_SLUG} from ${SDK_URL}..."
+          wget -q "${SDK_URL}" -O "${SDK_TARBALL}"
+          if [ $? -ne 0 ]; then echo "::error::Failed to download SDK from ${SDK_URL} for target ${TARGET_SLUG}."; exit 1; fi
+
+          echo "Extracting SDK tarball ${SDK_TARBALL} for target ${TARGET_SLUG}..."
+          if [[ "${SDK_TARBALL}" == *.tar.xz ]]; then tar -xJf "${SDK_TARBALL}";
+          elif [[ "${SDK_TARBALL}" == *.tar.gz ]]; then tar -xzf "${SDK_TARBALL}";
+          elif [[ "${SDK_TARBALL}" == *.tar.bz2 ]]; then tar -xjf "${SDK_TARBALL}";
+          elif [[ "${SDK_TARBALL}" == *.tar.zst ]]; then tar --zstd -xf "${SDK_TARBALL}";
+          else echo "::error::Unknown SDK compression for ${SDK_TARBALL}"; exit 1;
+          fi
+
+          if [ ! -d "${SDK_EXTRACTED_DIR_NAME}" ]; then
+            echo "::error::SDK directory '${SDK_EXTRACTED_DIR_NAME}' not found post-extraction for target ${TARGET_SLUG}. Contents of $(pwd):"
+            ls -l; exit 1
+          fi
+
+          echo "SDK_PATH=${PWD}/${SDK_EXTRACTED_DIR_NAME}" >> $GITHUB_ENV
+          echo "SDK for target ${TARGET_SLUG} successfully downloaded and extracted to ${PWD}/${SDK_EXTRACTED_DIR_NAME}"
+
+      - name: Prepare SDK, Copy Sources, Update Config for current target
+        id: prepare_sdk
+        run: |
+          TARGET_SLUG="${{ steps.set_target_slug.outputs.slug }}"
+          echo "SDK_PATH for target ${TARGET_SLUG} is $SDK_PATH"
+          REPO_SOURCE_BASE_PATH="$GITHUB_WORKSPACE/${{ env.REPO_CHECKOUT_PATH }}"
+          COPIED_PACKAGE_NAMES=""
+
+          echo "Copying all potential package directories from ${REPO_SOURCE_BASE_PATH} to $SDK_PATH/package/"
+          for ITEM_PATH in "${REPO_SOURCE_BASE_PATH}"/* ; do
+            if [ -d "${ITEM_PATH}" ]; then
+              ITEM_NAME=$(basename "${ITEM_PATH}")
+              if [ -f "${ITEM_PATH}/Makefile" ]; then
+                echo "Copying package '${ITEM_NAME}' to $SDK_PATH/package/"
+                mkdir -p "$SDK_PATH/package/${ITEM_NAME}"
+                rsync -a --delete "${ITEM_PATH}/" "$SDK_PATH/package/${ITEM_NAME}/"
+                if [ -z "$COPIED_PACKAGE_NAMES" ]; then COPIED_PACKAGE_NAMES="$ITEM_NAME"; else COPIED_PACKAGE_NAMES="$COPIED_PACKAGE_NAMES $ITEM_NAME"; fi
+              else
+                echo "Skipping '${ITEM_NAME}', not an OpenWrt package (no Makefile)."
+              fi
+            fi
+          done
+          
+          echo "Copied packages for target ${TARGET_SLUG}: $COPIED_PACKAGE_NAMES"
+          ls -l "$SDK_PATH/package/"
+          echo "COPIED_PACKAGE_NAMES_LIST=${COPIED_PACKAGE_NAMES}" >> $GITHUB_OUTPUT
+
+          cd "$SDK_PATH"
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+          echo "CONFIG_PACKAGE_luci-i18n-uestc-authclient-zh-cn=y" >> .config
+          yes "" | make oldconfig
+
+      - name: Build Target Package and Dependencies for current target
+        run: |
+          TARGET_SLUG="${{ steps.set_target_slug.outputs.slug }}"
+          cd "$SDK_PATH"
+          echo "Building main package: ${{ env.MAIN_APP_TO_BUILD }} for target ${TARGET_SLUG}"
+          # Increase verbosity and skip signing
+          make package/${{ env.MAIN_APP_TO_BUILD }}/compile V=s USIGN_CMD=/bin/true
+
+      - name: Find, Collect, and Archive IPKs for current target
+        id: package_ipks
+        run: |
+          TARGET_SLUG="${{ steps.set_target_slug.outputs.slug }}"
+          cd "$SDK_PATH"
+          # Unique collection directory for this matrix leg's IPKs, using the slug
+          IPK_COLLECTION_DIR_TEMP="$GITHUB_WORKSPACE/ipk_collection_temp_${TARGET_SLUG}"
+          mkdir -p "${IPK_COLLECTION_DIR_TEMP}"
+          
+          echo "Searching for IPKs for packages from repo: ${{ steps.prepare_sdk.outputs.COPIED_PACKAGE_NAMES_LIST }} for target ${TARGET_SLUG}"
+          IPKS_FOUND_COUNT=0 # Counts IPKs from the source repository
+
+          for PKG_NAME_FROM_REPO in ${{ steps.prepare_sdk.outputs.COPIED_PACKAGE_NAMES_LIST }}; do
+            echo "Looking for IPK for package from repo: $PKG_NAME_FROM_REPO"
+            # Robust find for IPKs
+            FOUND_IPK_PATH=$(find bin/packages/ -type f -name "${PKG_NAME_FROM_REPO}_*.ipk" -print -quit)
+            
+            if [ -n "$FOUND_IPK_PATH" ]; then
+              echo "Found IPK for $PKG_NAME_FROM_REPO: $FOUND_IPK_PATH"
+              cp "$FOUND_IPK_PATH" "${IPK_COLLECTION_DIR_TEMP}/"
+              IPKS_FOUND_COUNT=$((IPKS_FOUND_COUNT + 1))
+            else
+              echo "::warning::IPK for package $PKG_NAME_FROM_REPO (copied from repo) not found in bin/packages/ for target ${TARGET_SLUG}."
+            fi
+          done
+
+          MAIN_APP_NAME_VAR="${{ env.MAIN_APP_TO_BUILD }}"
+          # Derive i18n package name (e.g., luci-app-example -> luci-i18n-example-zh-cn)
+          if [[ "$MAIN_APP_NAME_VAR" == "luci-app-"* ]]; then
+            APP_BASENAME_VAR=$(echo "$MAIN_APP_NAME_VAR" | sed 's/^luci-app-//')
+            # Assuming the language code is zh-cn, adjust if different
+            I18N_PKG_NAME_VAR="luci-i18n-${APP_BASENAME_VAR}-zh-cn" 
+            
+            echo "Attempting to collect specific i18n package: $I18N_PKG_NAME_VAR"
+            FOUND_I18N_IPK_PATH_VAR=$(find bin/packages/ -type f -name "${I18N_PKG_NAME_VAR}_*.ipk" -print -quit)
+            
+            if [ -n "$FOUND_I18N_IPK_PATH_VAR" ]; then
+              echo "Found and collected IPK for $I18N_PKG_NAME_VAR: $FOUND_I18N_IPK_PATH_VAR"
+              cp "$FOUND_I18N_IPK_PATH_VAR" "${IPK_COLLECTION_DIR_TEMP}/"
+              # Note: We are not incrementing IPKS_FOUND_COUNT here, as that count
+              # is used to gate whether *any* of the primary repo packages were built.
+              # If the i18n package is absolutely essential, you might want to add a separate check or error here.
+            else
+              echo "::warning::Specific i18n IPK ($I18N_PKG_NAME_VAR) not found. This might be okay if it's optional or not generated for this build."
+            fi
+          else
+            echo "::notice::MAIN_APP_TO_BUILD ('${MAIN_APP_NAME_VAR}') does not start with 'luci-app-', so dynamic i18n package collection for zh-cn is skipped."
+          fi
+
+          if [ ${IPKS_FOUND_COUNT} -eq 0 ]; then
+            # This error triggers if *none* of the packages from your source repo (COPIED_PACKAGE_NAMES_LIST) were found.
+            # The i18n package's absence alone (if it was the only thing built) won't prevent this error.
+            echo "::error::No IPK files for any repository packages (from COPIED_PACKAGE_NAMES_LIST) found for target ${TARGET_SLUG}!"
+            echo "Listing all found IPKs in bin/packages/ for debugging:"
+            find bin/packages/ -type f -name "*.ipk" -print
+            echo "ipks_found_for_upload=false" >> $GITHUB_OUTPUT 
+            exit 1 # Fail this matrix leg
+          else
+            # Check if the collection directory actually has any files after all attempts
+            if [ -z "$(ls -A "${IPK_COLLECTION_DIR_TEMP}")" ]; then
+              echo "::error::IPK collection directory ${IPK_COLLECTION_DIR_TEMP} is empty after attempting to copy all desired IPKs for target ${TARGET_SLUG}!"
+              echo "Listing all found IPKs in bin/packages/ for debugging:"
+              find bin/packages/ -type f -name "*.ipk" -print
+              echo "ipks_found_for_upload=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+
+            echo "IPK(s) collected in ${IPK_COLLECTION_DIR_TEMP} for target ${TARGET_SLUG}:"
+            ls -l "${IPK_COLLECTION_DIR_TEMP}"
+            
+            # Define the final tar.gz archive name (for user download)
+            ARCHIVE_FILENAME="${{ needs.prepare_release_metadata.outputs.artifact_name_base }}-${{ needs.prepare_release_metadata.outputs.version_identifier }}-${{ matrix.openwrt_version }}-${{ matrix.openwrt_target_arch }}-${{ matrix.openwrt_target_subtarget }}.tar.gz"
+            ARCHIVE_FULL_PATH="$GITHUB_WORKSPACE/${ARCHIVE_FILENAME}"
+
+            echo "Creating archive: ${ARCHIVE_FILENAME}"
+            tar -czf "${ARCHIVE_FULL_PATH}" -C "${IPK_COLLECTION_DIR_TEMP}" . # Tar contents of the dir
+            
+            # Name for the GitHub Actions artifact (container for the tar.gz)
+            # This uses the slug for a unique internal artifact name.
+            IPK_ARCHIVE_ARTIFACT_NAME="release_asset_for_${TARGET_SLUG}"
+            
+            echo "ipks_found_for_upload=true" >> $GITHUB_OUTPUT
+            echo "ipk_archive_artifact_name=${IPK_ARCHIVE_ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+            echo "ipk_archive_upload_path=${ARCHIVE_FULL_PATH}" >> $GITHUB_OUTPUT 
+          fi
+              
+      - name: Upload IPK Archive for current target
+        # This step runs only if IPKs were successfully found and archived
+        if: steps.package_ipks.outputs.ipks_found_for_upload == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          # Unique artifact name for this matrix leg's archive, using the slug
+          name: ${{ steps.package_ipks.outputs.ipk_archive_artifact_name }}
+          # Path to the single tar.gz file to upload
+          path: ${{ steps.package_ipks.outputs.ipk_archive_upload_path }}
+          if-no-files-found: error
+          
+  publish_release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare_release_metadata, build_ipks_for_target] # Depends on metadata and ALL matrix build jobs
+    # Only run if all build jobs succeeded and it's not a PR build (secrets not available to PRs from forks)
+    # And also ensure we have a valid actual_tag_for_release from metadata.
+    if: success() && github.event_name != 'pull_request' && needs.prepare_release_metadata.outputs.actual_tag_for_release != ''
+    permissions:
+      contents: write # Required to create releases and upload assets
+
+    steps:
+      - name: Checkout repository (optional, if release notes need repo files)
+        uses: actions/checkout@v4
+
+      - name: Download all IPK Archives
+        # Download all artifacts produced by the build_ipks_for_target job matrix.
+        # They will be downloaded into subdirectories named after their artifact name.
+        uses: actions/download-artifact@v4
+        with:
+          # No 'name' specified, so it downloads all artifacts from the current workflow run
+          path: ./downloaded_release_assets/ 
+
+      - name: Prepare Release Assets
+        id: prep_assets
+        run: |
+          echo "Listing downloaded asset structure:"
+          ls -R ./downloaded_release_assets/
+          
+          # Create a flat directory for all tar.gz files to be uploaded
+          mkdir -p ./final_release_assets_for_upload/
+          
+          # Find all .tar.gz files within the downloaded artifacts and copy them to the flat directory
+          # Artifacts were named 'release_asset_for_TARGET_SLUG', and each contains one tar.gz
+          find ./downloaded_release_assets/ -type f -name "*.tar.gz" -exec cp {} ./final_release_assets_for_upload/ \;
+          
+          echo "Assets prepared for release:"
+          ls -l ./final_release_assets_for_upload/
+
+          if [ -z "$(ls -A ./final_release_assets_for_upload/)" ]; then
+            echo "::warning::No .tar.gz files found in downloaded artifacts to upload to release."
+            echo "assets_exist=false" >> $GITHUB_OUTPUT
+          else
+            echo "assets_exist=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release and Upload Assets
+        if: steps.prep_assets.outputs.assets_exist == 'true' # Only run if there are assets
+        uses: softprops/action-gh-release@v2
+        with:
+          # All *.tar.gz files from the flattened directory will be uploaded
+          files: ./final_release_assets_for_upload/*.tar.gz
+          tag_name: ${{ needs.prepare_release_metadata.outputs.actual_tag_for_release }}
+          name: | # Dynamically set release name
+            ${{ needs.prepare_release_metadata.outputs.build_type == 'release' && format('Release {0}', needs.prepare_release_metadata.outputs.version_identifier) || '' }}
+            ${{ needs.prepare_release_metadata.outputs.build_type == 'prerelease' && format('Pre-release for {0} ({1})', needs.prepare_release_metadata.outputs.branch_name_raw, needs.prepare_release_metadata.outputs.version_identifier) || '' }}
+          body: | # Dynamically set release body
+            Automated ${{ needs.prepare_release_metadata.outputs.build_type }} of ${{ needs.prepare_release_metadata.outputs.artifact_name_base }}.
+            Builds included for multiple OpenWrt targets (see attached .tar.gz archives).
+            
+            Main application: ${{ env.MAIN_APP_TO_BUILD }}
+            Triggering commit: ${{ github.sha }}
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          prerelease: ${{ needs.prepare_release_metadata.outputs.is_prerelease_boolean }}
