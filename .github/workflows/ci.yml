@@ -6,12 +6,9 @@ on:
   workflow_dispatch: # Allows manual triggering from the GitHub UI
   push:
     branches:
-      - v3_testing # Trigger on pushes to this branch
+      - testing/* # Trigger on testing branches
     tags:
       - 'v*'   # Trigger on pushes of tags matching 'v*' (eg. v3.1)
-  pull_request:
-    branches:
-      - v3_testing # Trigger on pull requests targeting this branch
 
 # Environment variables available to all jobs and steps in the workflow
 env:
