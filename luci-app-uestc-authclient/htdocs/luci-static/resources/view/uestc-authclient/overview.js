@@ -300,6 +300,7 @@ return view.extend({
 
         o = s.option(form.Flag, 'enabled', _('Enabled'));
         o.editable = true;
+        o.rmempty = false;
 
         o = s.option(form.Value, 'listen_interface', _('Interface'));
 
@@ -461,9 +462,9 @@ return view.extend({
             let defaultQshCTServerIP = '172.25.249.64', 
                 defaultQshSrunServerIP = '10.253.0.237', 
                 defaultQshSrunDormServerIP = '10.253.0.235';
-            o.value(defaultQshCTServerIP,"%s - %s (%s)".format(_('China Telecom'),_('Qingshuihe Campus Dormitory'),defaultQshCTServerIP));
-            o.value(defaultQshSrunServerIP, "Srun - %s (%s)".format(_('Qingshuihe Campus'),defaultQshSrunServerIP));
-            o.value(defaultQshSrunDormServerIP,"Srun - %s (%s)".format(_('Qingshuihe Campus Dormitory'),defaultQshSrunDormServerIP))
+            o.value(defaultQshCTServerIP, "%s - %s (%s)".format(_('China Telecom'),_('Qingshuihe Campus Dormitory'), defaultQshCTServerIP));
+            o.value(defaultQshSrunServerIP, "Srun - %s (%s)".format(_('Qingshuihe Campus'), defaultQshSrunServerIP));
+            o.value(defaultQshSrunDormServerIP, "Srun - %s (%s)".format(_('Qingshuihe Campus Dormitory'), defaultQshSrunDormServerIP))
             o.rmempty = false;
             
             // Network Tab Options
