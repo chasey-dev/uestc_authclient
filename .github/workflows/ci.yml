@@ -379,7 +379,8 @@ jobs:
     needs: [prepare_release_metadata, build_ipks_for_target] # Depends on metadata and ALL matrix build jobs
     # Only run if all build jobs succeeded and it's not a PR build (secrets not available to PRs from forks)
     # And also ensure we have a valid actual_tag_for_release from metadata.
-    if: success() && github.event_name != 'pull_request' && needs.prepare_release_metadata.outputs.actual_tag_for_release != ''
+    # dont publish release for 'prerelease' now
+    if: success() && github.event_name != 'pull_request' && needs.prepare_release_metadata.outputs.build_type != 'prerelease' && needs.prepare_release_metadata.outputs.actual_tag_for_release != ''
     permissions:
       contents: write # Required to create releases and upload assets
 
