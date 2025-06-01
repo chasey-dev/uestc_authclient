@@ -7,7 +7,7 @@
 ![image](https://github.com/user-attachments/assets/99c90228-4822-4d16-ac8f-0fa4334ac92a)
 ## 功能特性
 * **在网络掉线后，自动重新进行认证**
-* **定时断开网络连接，避免在高峰使用时间段的认证掉线**
+* **定时断开网络连接以重置认证时间，避免在高峰使用时间段的认证掉线**
 * **支持多种认证方式：**
     * 清水河教学办公区、新宿舍区的统一认证方式
     * 清水河老宿舍区电信认证方式
@@ -25,9 +25,10 @@
 ```
 echo "src-git https://github.com/chasey-dev/uestc_authclient;main" >> feeds.conf
 ```
-然后在make menuconfig中勾选编译即可。
+然后在 `make menuconfig` 中勾选编译即可。
 ## 注意事项
 已在OpenWrt 21.02.7与OpenWrt 24.10.1上的 `aarch64-cortex-a53` 进行测试，其余设备及版本不做任何兼容性保证。
 * App基于LuCI2架构，注意安装相关运行环境。
+* **若当前路由器固件不支持LuCI2架构，可使用基于Lua的 `v2.x` 分支版本。（仅支持单配置）**
 * 推荐在启用DSA模式的固件上使用，swconfig模式下未进行详细测试。
-* 在 `ramips`架构上的编译会出现问题。
+* 在 `ramips` 架构上的编译可能会出现问题。
