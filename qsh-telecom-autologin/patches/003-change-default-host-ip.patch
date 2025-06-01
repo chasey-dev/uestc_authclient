@@ -1,5 +1,5 @@
 diff --git a/main.go b/main.go
-index cb537b9..355647c 100644
+index 8648fd1..43f553a 100644
 --- a/main.go
 +++ b/main.go
 @@ -283,7 +283,7 @@ func (c *loginClient) saveCache() {
