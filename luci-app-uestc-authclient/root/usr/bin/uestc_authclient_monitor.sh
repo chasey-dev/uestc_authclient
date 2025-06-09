@@ -289,6 +289,12 @@ control_network() {
                 in_backoff_mode=0
                 CURRENT_CHECK_INTERVAL=$ORIGINAL_CHECK_INTERVAL
             fi
+
+            # Write status code 0 to the network status file to update LuCI status
+            # Do this only in scheduled disconnect case
+            mkdir -p "$(dirname "$NETWORK_STATUS_FILE")" 2>/dev/null
+            echo "0" > $NETWORK_STATUS_FILE 2>/dev/null
+            
         elif [ "$reason" = "backoff" ]; then
             log_message "$MSG_BACKOFF_DISCONNECT"
         fi
@@ -608,10 +614,6 @@ main() {
 
         # Check if we should run monitoring based on time window
         check_limited_monitoring
-        # if [ $? -eq 1 ]; then
-        #     sleep $CHECK_INTERVAL
-        #     continue
-        # fi
 
         # Check network connectivity and handle authentication
         check_network_connectivity $?
