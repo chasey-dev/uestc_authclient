@@ -560,6 +560,22 @@ return view.extend({
                     ui.addNotification(null, E('p', _('Error clearing logs of session %s: ').format(sid) + err.message));
                 })
             }, self, section_id);
+
+            o = modalSection.taboption('logging', form.Button, '_clean_all');
+            o.title = '&#160;';
+            o.inputtitle = _('Reset');
+            o.inputstyle = 'reset';
+            o.description = _('Reset everything but config of current session. This includes session logs, last login record, and network status.');
+            o.onclick = L.bind(function(sid, ev) {
+                this.callCleanSession(sid).then(() => {
+                    // After the clean logs operation is successful, show success message
+                    ui.addNotification(null, E('p', _('Session %s have been successfully reset.').format(sid)));
+                })
+                .catch(err => {
+                    // In case of an error, show error message
+                    ui.addNotification(null, E('p', _('Error resetting session %s: ').format(sid) + err.message));
+                })
+            }, self, section_id);
         };
 
         // Row Actions (Modified for combined Start/Stop)

@@ -283,6 +283,15 @@ msgstr ""
 msgid "Error clearing logs of session %s: "
 msgstr ""
 
+msgid "Reset everything but config of current session. This includes session logs, last login record, and network status."
+msgstr ""
+
+msgid "Session %s have been successfully reset."
+msgstr ""
+
+msgid "Error resetting session %s: "
+msgstr ""
+
 # --------------------------------------------------------------
 # Common
 # --------------------------------------------------------------

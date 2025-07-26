@@ -280,6 +280,15 @@ msgstr "成功删除配置 %s 的日志。"
 msgid "Error clearing logs of session %s: "
 msgstr "删除配置 %s 的日志时出错："
 
+msgid "Reset everything but config of current session. This includes session logs, last login record, and network status."
+msgstr "重置当前配置的所有内容，包括日志、上次登录时间和网络状态。"
+
+msgid "Session %s have been successfully reset."
+msgstr "成功重置配置 %s 的所有内容。"
+
+msgid "Error resetting session %s: "
+msgstr "重置配置 %s 的所有内容时出错："
+
 # --------------------------------------------------------------
 # Common
 # --------------------------------------------------------------
