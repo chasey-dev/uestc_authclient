@@ -69,8 +69,8 @@ init_i18n() {
         MSG_SESSION_STARTED="配置 %s 已启动 (PID: %s)"
         MSG_SESSION_STOPPED="配置 %s 已停止 (PID: %s)"
         MSG_SESSION_ALREADY_RUNNING="配置 %s 已在运行 (PID: %s)"
-        MSG_SESSION_NOT_RUNNING="配置 %s 未运行"
-        MSG_SESSION_DISABLED="配置 %s 已禁用"
+        MSG_SESSION_NOT_RUNNING="配置 %s 未运行。"
+        MSG_SESSION_DISABLED="配置 %s 已禁用。"
         MSG_STARTING_ALL_SESSIONS="正在启动所有已启用的配置。"
         MSG_STOPPING_ALL_SESSIONS="正在停止所有正在运行的配置。"
         MSG_INTERFACE_LOCKED="接口 %s 已经被使用。配置 %s 无法启动。"
@@ -124,18 +124,18 @@ init_i18n() {
         
         # Logging messages
         MSG_LOG_INITIALIZED="Log initialized. Log file created at"
-        MSG_LOG_FILE_CLEARED="Log file cleared (retention period: %s days)"
-        MSG_NO_LOGS_AVAILABLE="No logs available"
+        MSG_LOG_FILE_CLEARED="Log file cleared. (retention period: %s days)"
+        MSG_NO_LOGS_AVAILABLE="No logs available."
         MSG_LOG_CLEANUP_COMPLETED="Log cleanup completed. Deleted %s/%s log files (retention period: %s days)"
 
         # Session manager messages
-        MSG_SESSION_STARTED="Session %s started (PID: %s)"
-        MSG_SESSION_STOPPED="Session %s stopped (PID: %s)"
-        MSG_SESSION_ALREADY_RUNNING="Session %s is already running (PID: %s)"
-        MSG_SESSION_NOT_RUNNING="Session %s is not running"
-        MSG_SESSION_DISABLED="Session %s is disabled"
-        MSG_STARTING_ALL_SESSIONS="Starting all enabled sessions"
-        MSG_STOPPING_ALL_SESSIONS="Stopping all running sessions"
+        MSG_SESSION_STARTED="Session %s started. (PID: %s)"
+        MSG_SESSION_STOPPED="Session %s stopped. (PID: %s)"
+        MSG_SESSION_ALREADY_RUNNING="Session %s is already running. (PID: %s)"
+        MSG_SESSION_NOT_RUNNING="Session %s is not running."
+        MSG_SESSION_DISABLED="Session %s is disabled."
+        MSG_STARTING_ALL_SESSIONS="Starting all enabled sessions."
+        MSG_STOPPING_ALL_SESSIONS="Stopping all running sessions."
         MSG_INTERFACE_LOCKED="Interface %s is already in use. Stopping session %s ..."
     
     fi
