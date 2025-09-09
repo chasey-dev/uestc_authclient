@@ -1,15 +1,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=go-nd-portal
-PKG_VERSION:=0.2.1
+PKG_VERSION:=0.3.1-dirty-20250903
 PKG_RELEASE:=1
 PKG_BUILD_DEPENDS:=golang
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/fumiama/go-nd-portal.git
-PKG_SOURCE_DATE:=2025-05-21
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/chasey-dev/go-nd-portal.git
+PKG_SOURCE_VERSION:=fac2f98cca01ae6cb8bcbdcc9344838b4f831884
+PKG_SOURCE_DATE:=2025-09-03
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
