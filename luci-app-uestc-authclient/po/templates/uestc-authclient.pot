@@ -187,6 +187,9 @@ msgstr ""
 msgid "Qingshuihe Campus Dormitory"
 msgstr ""
 
+msgid "Shahe Campus"
+msgstr ""
+
 msgid "CERNET"
 msgstr ""
 

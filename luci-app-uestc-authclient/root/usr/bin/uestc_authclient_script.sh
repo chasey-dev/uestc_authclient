@@ -23,7 +23,7 @@ usage() {
     printf "  -s: Authentication server / host\n"
     printf "  -u: Username\n"
     printf "  -p: Password\n"
-    printf "  -m: Authentication mode [qsh-edu | qsh-dx | qshd-dx | qshd-cmcc] (srun only, default: qsh-edu)\n"
+    printf "  -m: Authentication mode {qsh-edu | qsh-dx | qshd-dx | qshd-cmcc | sh-edu | sh-dx | sh-cmcc} (srun only, default: qsh-edu)\n"
     printf "  -w: Timeout (seconds) waiting for IP on interface (default: 30)\n"
     exit 1
 }

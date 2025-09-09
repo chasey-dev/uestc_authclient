@@ -184,6 +184,9 @@ msgstr "清水河"
 msgid "Qingshuihe Campus Dormitory"
 msgstr "清水河宿舍"
 
+msgid "Shahe Campus"
+msgstr "沙河"
+
 msgid "CERNET"
 msgstr "教育网"
 
