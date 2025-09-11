@@ -426,8 +426,9 @@ return view.extend({
             o.rmempty = false;
 
             o = modalSection.taboption('auth', form.ListValue, 'auth_type', _('Authentication method'));
-            o.description = _('Select the authentication method. New dormitories and teaching areas use the ' + 
-                                'Srun authentication method.');
+            o.description = _('Select the authentication method.<br />' +
+                            '<strong>CT authentication method is for old dormitories in Qingshuihe only.</strong><br />' +
+                            'For other areas, select Srun authentication method.');
             o.value('srun', _('Srun authentication method (go-nd-portal)'));
             o.value('ct', _('CT authentication method (qsh-telecom-autologin)'));
             o.default = 'srun';

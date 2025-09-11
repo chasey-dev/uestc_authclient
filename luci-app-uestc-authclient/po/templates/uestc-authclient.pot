@@ -164,8 +164,9 @@ msgid "Authentication method"
 msgstr ""
 
 msgid ""
-"Select the authentication method. New dormitories and teaching areas use the "
-"Srun authentication method."
+"Select the authentication method.<br />"
+"<strong>CT authentication method is for old dormitories in Qingshuihe only.</strong><br />"
+"For other areas, select Srun authentication method."
 msgstr ""
 ""
 
