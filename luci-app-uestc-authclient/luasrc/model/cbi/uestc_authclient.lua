@@ -124,6 +124,9 @@ oSrunMode:value("qsh-edu", string.format(string.format("%s - %s", translate("Qin
 oSrunMode:value("qsh-dx", string.format(string.format("%s - %s", translate("Qingshuihe Campus"), translate("China Telecom"))))
 oSrunMode:value("qshd-dx", string.format(string.format("%s - %s", translate("Qingshuihe Campus Dormitory"), translate("China Telecom"))))
 oSrunMode:value("qshd-cmcc", string.format(string.format("%s - %s", translate("Qingshuihe Campus Dormitory"), translate("China Mobile"))))
+oSrunMode:value("sh-edu", string.format(string.format("%s - %s", translate("Shahe Campus"), translate("CERNET"))))
+oSrunMode:value("sh-dx", string.format(string.format("%s - %s", translate("Shahe Campus"), translate("China Telecom"))))
+oSrunMode:value("sh-cmcc", string.format(string.format("%s - %s", translate("Shahe Campus"), translate("China Mobile"))))
 oSrunMode.default = "qsh-edu"
 oSrunMode.description = translate("Select the authentication mode for the Srun client.")
 oSrunMode:depends("auth_type", "srun")
