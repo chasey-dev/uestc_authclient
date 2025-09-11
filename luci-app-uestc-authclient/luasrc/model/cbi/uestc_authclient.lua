@@ -40,7 +40,9 @@ ctype.default = "ct"
 ctype.rmempty = false
 ctype:value("ct", translate("CT authentication method (qsh-telecom-autologin)"))
 ctype:value("srun", translate("Srun authentication method (go-nd-portal)"))
-ctype.description = translate("Select the authentication method. New dormitories and teaching areas use the Srun authentication method.")
+ctype.description = translate("Select the authentication method.<br />" ..
+                            "<strong>CT authentication method is for old dormitories in Qingshuihe only.</strong><br />" ..
+                            "For other areas, select Srun authentication method.")
 
 ----------------------[ CT fields ]----------------------
 
