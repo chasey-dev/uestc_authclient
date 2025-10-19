@@ -23,7 +23,7 @@
 ### 方法3：自行编译
 下载OpenWrt SDK源码，将该仓库添加为 `feed`。
 ```
-echo "src-git https://github.com/chasey-dev/uestc_authclient;main" >> feeds.conf
+echo "src-git uestc_authclient https://github.com/chasey-dev/uestc_authclient;main" >> feeds.conf
 ```
 然后在 `make menuconfig` 中勾选编译即可。
 ## 注意事项
