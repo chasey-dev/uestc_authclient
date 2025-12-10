@@ -244,6 +244,10 @@ jobs:
         run: |
           cd "$SDK_PATH"
 
+          # replace git.openwrt.org with github source
+          sed -i 's/git\.openwrt\.org\/feed\//github\.com\/openwrt\//g' feeds.conf.default
+          sed -i 's/git\.openwrt\.org\/project\//github\.com\/openwrt\//g' feeds.conf.default 
+
           # Get the dynamic git ref (branch or tag) from the metadata job.
           FEED_REF_TO_CHECKOUT="${{ needs.prepare_release_metadata.outputs.feed_ref_to_use }}"
           echo "Will use feed source from git ref: ${FEED_REF_TO_CHECKOUT}"
