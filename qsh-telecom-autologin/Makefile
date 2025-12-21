@@ -8,6 +8,8 @@ PKG_SOURCE_URL:=https://github.com/Aleksanaa/qsh-telecom-autologin.git
 PKG_SOURCE_DATE:=2024-08-03
 PKG_SOURCE_VERSION:=70f902793096b5f294fa7061a2e9030ffdf5ede7
 
+PKG_BUILD_DEPENDS:=golang/host
+
 # should define beforce including golang-package.mk
 GO_PKG:=github.com/aleksanaa/qsh-telecom-autologin
 

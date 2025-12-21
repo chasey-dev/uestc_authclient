@@ -8,6 +8,8 @@ PKG_SOURCE_URL:=https://github.com/chasey-dev/go-nd-portal.git
 PKG_SOURCE_DATE:=2025-12-10
 PKG_SOURCE_VERSION:=ae08bbcc05725257d879f49b86641ea9e455837a
 
+PKG_BUILD_DEPENDS:=golang/host
+
 # should define beforce including golang-package.mk
 GO_PKG:=github.com/fumiama/go-nd-portal
 
